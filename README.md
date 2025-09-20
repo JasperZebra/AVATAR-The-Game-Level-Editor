@@ -2,6 +2,8 @@
 
 A level editor for modifying **Avatar: The Game** level files with full FCB to XML conversion support and real-time xml file editing capabilities.
 
+**NOTE:** To run from SC, download the SC `.zip` and also download this [tools](https://drive.google.com/file/d/1ODFv-8vchhmCzvmx5WS6GT7gApLQ-lDz/view?usp=sharing) folder too and extract it to the root of the editor.
+
 ## Features
 
 - **Dual-Format Support**: Seamlessly works with both FCB and XML file formats with automatic conversion
