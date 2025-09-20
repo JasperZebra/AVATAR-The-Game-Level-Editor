@@ -191,7 +191,7 @@ class MapCanvas(QOpenGLWidget):
             
         try:
             gl.glViewport(0, 0, width, height)
-            print(f"ðŸŽ§ OpenGL viewport resized: {width}x{height}")
+            print(f"OpenGL viewport resized: {width}x{height}")
         except Exception as e:
             print(f"Error resizing OpenGL viewport: {e}")
     

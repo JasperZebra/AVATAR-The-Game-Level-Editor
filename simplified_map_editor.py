@@ -174,32 +174,32 @@ class SimplifiedMapEditor(QMainWindow):
         content_text = """
     <b>Welcome to the Avatar: The Game Level Editor!</b><br><br>
 
-    <b>ðŸš€ Quick Start:</b><br>
+    <b>Quick Start:</b><br>
 
     1. Click the green <b>"Select Level"</b> button to load a complete level<br>
     2. First: Select your <b>"WORLDS"</b> folder <b>(contains XML files)</b><br>
     3. Second: Select your <b>"LEVELS"</b> folder <b>(contains worldsectors)</b><br>
     4. Start editing entities with full copy/paste support!<br><br>
 
-    <b>âœ¨ Key Features:</b><br>
+    <b>Key Features:</b><br>
 
-    â€¢ <b>Two-step loading:</b> Load both world data and level objects<br>
-    â€¢ <b>Smart entity placement:</b> Automatically places entities in correct files<br>
-    â€¢ <b>Copy/Paste system:</b> Duplicate entities with unique IDs and names<br>
-    â€¢ <b>Sector management:</b> Move entities between different sectors<br>
-    â€¢ <b>Visual editing:</b> 2D mode with gizmo controls<br>
-    â€¢ <b>Entity browser:</b> Color-coded entity browser with type grouping<br><br>
+    <b>Two-step loading:</b> Load both world data and level objects<br>
+    <b>Smart entity placement:</b> Automatically places entities in correct files<br>
+    <b>Copy/Paste system:</b> Duplicate entities with unique IDs and names<br>
+    <b>Sector management:</b> Move entities between different sectors<br>
+    <b>Visual editing:</b> 2D mode with gizmo controls<br>
+    <b>Entity browser:</b> Color-coded entity browser with type grouping<br><br>
 
-    <b>âŒ¨ï¸ Keyboard Shortcuts:</b><br>
+    <b>Keyboard Shortcuts:</b><br>
 
-    â€¢ <b>Ctrl+O:</b> Select Level (two-step loading)<br>
-    â€¢ <b>Delete:</b> Delete selected entities<br>
+    <b>Ctrl+O:</b> Select Level (two-step loading)<br>
+    <b>Delete:</b> Delete selected entities<br>
 
-    <b>ðŸ–±ï¸ Right-click menu:</b><br>
+    <b>Right-click menu:</b><br>
 
-    â€¢ Move entities to different sectors<br>
-    â€¢ Copy, paste, and duplicate operations<br>
-    â€¢ View and selection controls<br><br>
+    Move entities to different sectors<br>
+    Copy, paste, and duplicate operations<br>
+    View and selection controls<br><br>
 
     <b>Ready to get started? Click the green "Start Modding!" button!</b><br>
 
@@ -271,18 +271,18 @@ class SimplifiedMapEditor(QMainWindow):
         
     <b>ðŸŒŸ Core Features:</b><br>
 
-    â€¢ Load and edit Avatar: The Game level XML files<br>
-    â€¢ Visual entity editing with 2D view mode<br>
-    â€¢ Smart copy/paste system with automatic ID generation<br>
-    â€¢ Entity browser with <b>color-coded</b> type grouping<br>
-    â€¢ Sector boundary visualization and violation detection<br>
-    â€¢ Move entities between different sectors<br>
-    â€¢ Automatic file format conversion <b>(FCB â†” XML)</b><br>
-    â€¢ Grid configuration support<br><br>
+    Load and edit Avatar: The Game level XML files<br>
+    Visual entity editing with 2D view mode<br>
+    Smart copy/paste system with automatic ID generation<br>
+    Entity browser with <b>color-coded</b> type grouping<br>
+    Sector boundary visualization and violation detection<br>
+    Move entities between different sectors<br>
+    Automatic file format conversion <b>(FCB â†” XML)</b><br>
+    Grid configuration support<br><br>
 
     <b>ðŸŽ¯ Designed for:</b><br>
 
-    â€¢ Avatar: The Game community<br><br>
+    Avatar: The Game community<br><br>
     
     """
         
@@ -781,8 +781,8 @@ class SimplifiedMapEditor(QMainWindow):
                 "No Valid Data Found",
                 f"The selected folder doesn't contain valid level data:\n{selected_folder}\n\n"
                 f"Please select a folder containing:\n"
-                f"â€¢ World data: XML files (mapsdata.xml, etc.)\n"
-                f"â€¢ Level data: worldsectors folder with .data.fcb files"
+                f"World data: XML files (mapsdata.xml, etc.)\n"
+                f"Level data: worldsectors folder with .data.fcb files"
             )
 
     def validate_worlds_folder(self, folder_path):
@@ -1722,11 +1722,11 @@ class SimplifiedMapEditor(QMainWindow):
                 progress_dialog.close()
                 
                 # Show detailed search results
-                search_info = "Searched in:\nâ€¢ Main folder\nâ€¢ All subfolders (up to 3 levels deep)\n\n"
-                search_info += "Looking for:\nâ€¢ mapsdata.xml/.fcb\nâ€¢ .managers.xml/.fcb\nâ€¢ .omnis.xml/.fcb\nâ€¢ sectorsdep.xml/.fcb"
+                search_info = "Searched in:\nMain folder\nAll subfolders (up to 3 levels deep)\n\n"
+                search_info += "Looking for:\nmapsdata.xml/.fcb\n.managers.xml/.fcb\n.omnis.xml/.fcb\nsectorsdep.xml/.fcb"
                 
                 if worldsectors_info:
-                    search_info += f"\n\nFound worldsectors folder:\nâ€¢ {worldsectors_info['relative_path']} ({worldsectors_info['fcb_files']} .fcb files)"
+                    search_info += f"\n\nFound worldsectors folder:\n{worldsectors_info['relative_path']} ({worldsectors_info['fcb_files']} .fcb files)"
                 
                 QMessageBox.warning(
                     self,
@@ -1755,7 +1755,7 @@ class SimplifiedMapEditor(QMainWindow):
                 
                 location = found_files["mapsdata"]["location"]
                 location_text = f" (found in {location})" if location != "." else ""
-                loaded_files.append(f"â€¢ {os.path.basename(self.xml_file_path)} ({len(self.entities)} entities){location_text}")
+                loaded_files.append(f"{os.path.basename(self.xml_file_path)} ({len(self.entities)} entities){location_text}")
             
             progress_dialog.setValue(80)
             QApplication.processEvents()
@@ -1776,7 +1776,7 @@ class SimplifiedMapEditor(QMainWindow):
                     
                     location = found_files[file_key]["location"]
                     location_text = f" (found in {location})" if location != "." else ""
-                    loaded_files.append(f"â€¢ {os.path.basename(found_files[file_key]['path'])} ({new_entities} entities){location_text}")
+                    loaded_files.append(f"{os.path.basename(found_files[file_key]['path'])} ({new_entities} entities){location_text}")
             
             progress_dialog.setValue(95)
             progress_dialog.setLabelText("Updating display...")
@@ -1810,7 +1810,7 @@ class SimplifiedMapEditor(QMainWindow):
             success_message = f"Successfully loaded the main level files:\n\n" + "\n".join(loaded_files)
             
             if worldsectors_info:
-                success_message += f"\n\nAlso found worldsectors folder:\nâ€¢ {worldsectors_info['relative_path']}"
+                success_message += f"\n\nAlso found worldsectors folder:\n{worldsectors_info['relative_path']}"
                 success_message += f"\n  ({worldsectors_info['fcb_files']} .fcb, {worldsectors_info['xml_files']} .xml files)"
                 success_message += f"\n\nUse 'Load Objects' to load worldsector entities."
             
@@ -1868,10 +1868,10 @@ class SimplifiedMapEditor(QMainWindow):
                 "No Worldsectors Found",
                 f"No worldsectors folder found in:\n{selected_folder}\n\n"
                 f"Searched for folders named:\n"
-                f"â€¢ worldsectors\n"
-                f"â€¢ WorldSectors\n"
-                f"â€¢ worldsector\n"
-                f"â€¢ sectors\n\n"
+                f"worldsectors\n"
+                f"WorldSectors\n"
+                f"worldsector\n"
+                f"sectors\n\n"
                 f"Also checked for .data.fcb files in subfolders."
             )
             return
@@ -1896,9 +1896,9 @@ class SimplifiedMapEditor(QMainWindow):
         
         message = (
             f"Found worldsectors {location_text}:\n\n"
-            f"â€¢ {worldsectors_info['fcb_files']} .data.fcb files\n"
-            f"â€¢ {worldsectors_info['xml_files']} .converted.xml files\n"
-            f"â€¢ {worldsectors_info['data_xml_files']} .data.xml files\n\n"
+            f"{worldsectors_info['fcb_files']} .data.fcb files\n"
+            f"{worldsectors_info['xml_files']} .converted.xml files\n"
+            f"{worldsectors_info['data_xml_files']} .data.xml files\n\n"
             f"This will convert FCB files to XML and load all objects.\n"
             f"Continue?"
         )
@@ -2165,7 +2165,7 @@ class SimplifiedMapEditor(QMainWindow):
             # Show success message
             if loaded_components:
                 success_message = f"Successfully loaded level '{level_name}':\n\n"
-                success_message += "\n".join([f"â€¢ {component}" for component in loaded_components])
+                success_message += "\n".join([f"{component}" for component in loaded_components])
                 success_message += f"\n\nTotal entities/objects: {total_entities}"
                 
                 QMessageBox.information(
@@ -4723,9 +4723,9 @@ class SimplifiedMapEditor(QMainWindow):
                         f"Failed to remove {entity.name} from current sector.\n\n"
                         f"The entity '{entity.name}' was not found in the source file.\n"
                         f"This might happen if:\n"
-                        f"â€¢ The entity was already moved\n"
-                        f"â€¢ The XML file structure is different than expected\n"
-                        f"â€¢ The entity name contains special characters\n\n"
+                        f"The entity was already moved\n"
+                        f"The XML file structure is different than expected\n"
+                        f"The entity name contains special characters\n\n"
                         f"Check the console output for detailed debugging information."
                     )
                     return False
@@ -6208,9 +6208,9 @@ class SimplifiedMapEditor(QMainWindow):
             "Save Objects",
             f"Convert {len(self.objects)} objects back to FCB format?\n\n"
             f"This will:\n"
-            f"â€¢ Save XML files with current object positions\n"
-            f"â€¢ Convert XML files back to FCB format\n"
-            f"â€¢ Remove temporary XML files\n\n"
+            f"Save XML files with current object positions\n"
+            f"Convert XML files back to FCB format\n"
+            f"Remove temporary XML files\n\n"
             f"Continue?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )

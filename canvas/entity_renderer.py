@@ -294,7 +294,7 @@ class EntityRenderer:
             'is_fence': is_fence,
             'name': getattr(entity, 'name', 'unknown'),
             'normal_color': self.type_colors.get(entity_type, self.type_colors["Unknown"]),
-            'selected_color': QColor(52, 152, 255),  # Blue selection color
+            'selected_color': QColor(0, 0, 255),  # Blue selection color
             'rotation': 0.0,
             'rotation_cache_time': 0
         }
@@ -319,7 +319,7 @@ class EntityRenderer:
             self._last_2d_log_time = current_time
         
         # Disable antialiasing for performance
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         
         # Check for highlighting
         has_highlighted = hasattr(canvas, 'icon_renderer') and hasattr(canvas.icon_renderer, 'highlighted_entities_list') and canvas.icon_renderer.highlighted_entities_list
@@ -383,7 +383,7 @@ class EntityRenderer:
                         outline_width = 2
                     else:
                         color = entity_data['normal_color']
-                        size = 8
+                        size = 10
                         outline_width = 1
                     
                     final_size = int(round(size * entity_data['size_multiplier']))
@@ -425,8 +425,24 @@ class EntityRenderer:
         if should_log:
             print(f"Drew {entities_drawn} entities in 2D mode (culled: {entities_culled})")
 
+    def draw_smooth_circle(self, painter, x, y, radius, segments=24):
+        """Draw a circle using a polygon with specified number of segments"""
+        import math
+        from PyQt6.QtGui import QPolygonF
+        from PyQt6.QtCore import QPointF
+        
+        points = []
+        for i in range(segments):
+            angle = 2 * math.pi * i / segments
+            px = x + radius * math.cos(angle)
+            py = y + radius * math.sin(angle)
+            points.append(QPointF(px, py))
+        
+        polygon = QPolygonF(points)
+        painter.drawPolygon(polygon)
+
     def draw_batch_circles(self, painter, circles_data):
-        """Draw multiple circles efficiently in a batch"""
+        """Draw multiple circles efficiently with custom polygon circles"""
         if not circles_data:
             return
         
@@ -454,15 +470,11 @@ class EntityRenderer:
             painter.setPen(QPen(Qt.GlobalColor.black, outline_width))
             painter.setBrush(QBrush(color))
             
-            # Draw all circles with this style
+            # Draw all circles with this style using custom polygon circles
             for circle in circle_group:
                 radius = circle['size']
-                painter.drawEllipse(
-                    circle['x'] - radius, 
-                    circle['y'] - radius, 
-                    radius * 2, 
-                    radius * 2
-                )
+                # Use 24 segments for smooth circles (you can adjust this number)
+                self.draw_smooth_circle(painter, circle['x'], circle['y'], radius, 24)
 
     def draw_fence_indicator_optimized(self, painter, entity, screen_x, screen_y, canvas):
         """Optimized fence drawing with simple line"""
