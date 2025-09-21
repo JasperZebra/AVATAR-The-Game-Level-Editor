@@ -1,3 +1,9 @@
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/JasperZebra/AVATAR-The-Game-Level-Editor?style=for-the-badge&logo=github&color=00ffff&logoColor=white&labelColor=1a4d66)
+![Total Downloads](https://img.shields.io/github/downloads/JasperZebra/AVATAR-The-Game-Level-Editor/total?style=for-the-badge&logo=github&color=00ffff&logoColor=white&labelColor=1a4d66) 
+![Platform](https://img.shields.io/badge/platform-windows-00ffff?style=for-the-badge&logo=windows&logoColor=00ffff&labelColor=1a4d66) 
+![Made for](https://img.shields.io/badge/made%20for-2009_AVATAR:_The_Game-00ffff?style=for-the-badge&logo=gamepad&logoColor=00ffff&labelColor=1a4d66) 
+![Tool Type](https://img.shields.io/badge/type-level%20editor-00ffff?style=for-the-badge&logo=edit&logoColor=00ffff&labelColor=1a4d66)
+
 # Avatar: The Game Level Editor
 
 A level editor for modifying **Avatar: The Game** level files with full FCB to XML conversion support and real-time xml file editing capabilities.
