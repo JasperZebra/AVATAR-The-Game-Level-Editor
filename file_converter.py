@@ -1,3 +1,6 @@
+import multiprocessing
+from multiprocessing import Pool, cpu_count
+
 import os
 import subprocess
 import shutil
@@ -74,8 +77,9 @@ class FileConverter:
             print("File conversion is disabled.")
             print(f"Check converter_debug.txt for details")
 
-    def convert_data_fcb_files(self, worldsectors_path, progress_callback=None):
-        """Convert .data.fcb files to .converted.xml format"""
+    # UPDATED METHOD - replace existing convert_data_fcb_files
+    def convert_data_fcb_files(self, worldsectors_path, progress_callback=None, use_multiprocessing=True):
+        """Convert .data.fcb files to .converted.xml format with optional multiprocessing"""
         if not self.conversion_enabled:
             print("File conversion is disabled.")
             if progress_callback:
@@ -110,15 +114,24 @@ class FileConverter:
                 progress_callback(1.0)
             return 0, 0, []
         
-        print(f"Converting {len(files_to_convert)} .data.fcb files...")
+        print(f"Converting {len(files_to_convert)} .data.fcb files, Please Wait.")
         
+        # Use multiprocessing for multiple files, sequential for single file
+        if use_multiprocessing and len(files_to_convert) > 1:
+            return self._convert_multiprocessing(files_to_convert, progress_callback)
+        else:
+            return self._convert_sequential(files_to_convert, progress_callback)
+
+    # NEW METHOD - add this to FileConverter class
+    def _convert_sequential(self, files_to_convert, progress_callback):
+        """Sequential conversion (original behavior)"""
         success_count = 0
         error_count = 0
         errors = []
         
         for i, fcb_file in enumerate(files_to_convert):
             try:
-                print(f"Converting ({i+1}/{len(files_to_convert)}): {os.path.basename(fcb_file)}...")
+                print(f"Converting ({i+1}/{len(files_to_convert)}): {os.path.basename(fcb_file)}, Please Wait.")
                 
                 if self.convert_fcb_to_converted_xml(fcb_file):
                     success_count += 1
@@ -143,6 +156,76 @@ class FileConverter:
         print(f"Data FCB conversion complete: {success_count} successful, {error_count} failed")
         return success_count, error_count, errors
 
+    def _convert_multiprocessing(self, files_to_convert, progress_callback):
+        """Parallel conversion using multiprocessing"""
+        file_count = len(files_to_convert)
+        
+        # Determine optimal worker count
+        if file_count < 4:
+            num_workers = min(file_count, cpu_count() - 2)
+        else:
+            num_workers = max(2, min(cpu_count() - 2, 8))
+        
+        # Use chunksize 1 for immediate feedback
+        chunksize = 1
+        
+        print(f"Using multiprocessing with {num_workers} workers (processing {file_count} files)")
+        
+        # Create conversion tasks with converter path
+        tasks = [(fcb_file, self.fcb_converter_path) for fcb_file in files_to_convert]
+        
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        # Track timing
+        import time
+        start_time = time.time()
+        
+        try:
+            with Pool(processes=num_workers) as pool:
+                for i, result in enumerate(pool.imap(_convert_fcb_worker, tasks, chunksize=chunksize)):
+                    # Create log message
+                    log_msg = f"({i+1}/{len(tasks)}) "
+                    
+                    if result.get('message'):
+                        log_msg += result['message']
+                        print(log_msg)  # Also print to console
+                    
+                    # Count results
+                    if result['success']:
+                        success_count += 1
+                    else:
+                        error_count += 1
+                        if result.get('error'):
+                            errors.append(f"{result['filename']}: {result['error']}")
+                    
+                    # Update progress with log message
+                    progress = (i + 1) / len(tasks)
+                    if progress_callback:
+                        # Check if callback accepts message parameter
+                        try:
+                            progress_callback(progress, log_msg)
+                        except TypeError:
+                            # Fallback if callback doesn't accept message
+                            progress_callback(progress)
+        
+        except Exception as e:
+            print(f"\nMultiprocessing error: {e}, falling back to sequential processing")
+            return self._convert_sequential(files_to_convert, progress_callback)
+        
+        if progress_callback:
+            try:
+                progress_callback(1.0, f"Conversion complete: {success_count} OK, {error_count} failed")
+            except TypeError:
+                progress_callback(1.0)
+        
+        elapsed_total = time.time() - start_time
+        minutes = int(elapsed_total / 60)
+        seconds = int(elapsed_total % 60)
+        print(f"\nParallel conversion complete: {success_count} successful, {error_count} failed in {minutes}m {seconds}s")
+        return success_count, error_count, errors
+
     def convert_fcb_to_converted_xml(self, fcb_path):
         """Optimized single file conversion"""
         try:
@@ -152,7 +235,7 @@ class FileConverter:
                 print(f"Converted XML file already exists: {os.path.basename(converted_xml_path)}")
                 return True
             
-            print(f"Converting FCB to converted XML: {os.path.basename(fcb_path)} -> {os.path.basename(converted_xml_path)}")
+            print(f"Converting FCB to converted XML: {os.path.basename(fcb_path)} -> {os.path.basename(converted_xml_path)}, Please Wait.")
             
             # Run the FCB converter
             process = subprocess.run(
@@ -196,7 +279,7 @@ class FileConverter:
                 print(f"XML file already exists: {os.path.basename(xml_path)}")
                 return True
             
-            print(f"Converting FCB to XML: {os.path.basename(fcb_path)} -> {os.path.basename(xml_path)}")
+            print(f"Converting FCB to XML: {os.path.basename(fcb_path)} -> {os.path.basename(xml_path)}, Please Wait.")
             
             # Run the Gibbed converter
             process = subprocess.run(
@@ -238,7 +321,7 @@ class FileConverter:
             base_name = os.path.splitext(os.path.basename(original_fcb_path))[0]
             expected_new_fcb_path = os.path.join(fcb_dir, base_name + "_new.fcb")
             
-            print(f"Converting XML back to FCB: {os.path.basename(converted_xml_path)} -> {os.path.basename(expected_new_fcb_path)}")
+            print(f"Converting XML back to FCB: {os.path.basename(converted_xml_path)} -> {os.path.basename(expected_new_fcb_path)}, Please Wait.")
             
             # Remove existing _new file if it exists
             if os.path.exists(expected_new_fcb_path):
@@ -744,3 +827,51 @@ class FileConverter:
         except Exception as e:
             print(f"Error converting XML to FCB {xml_path}: {e}")
             return False
+        
+def _convert_fcb_worker(task):
+    """Worker function for parallel FCB conversion - runs in separate process"""
+    fcb_path, converter_path = task
+    
+    result = {
+        'filename': os.path.basename(fcb_path),
+        'success': False,
+        'error': None,
+        'message': None  # Add message field
+    }
+    
+    try:
+        converted_xml_path = fcb_path + ".converted.xml"
+        
+        # Check if already exists
+        if os.path.exists(converted_xml_path):
+            result['success'] = True
+            result['message'] = f"Already converted: {result['filename']}"
+            return result
+        
+        # Run the FCB converter
+        process = subprocess.run(
+            [converter_path, fcb_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30
+        )
+        
+        if process.returncode == 0 and os.path.exists(converted_xml_path):
+            xml_size = os.path.getsize(converted_xml_path)
+            result['success'] = True
+            result['message'] = f"Converted: {result['filename']} ({xml_size} bytes)"
+        else:
+            result['error'] = f"Return code: {process.returncode}"
+            if process.stderr:
+                result['error'] += f" - {process.stderr[:100]}"
+            result['message'] = f"Failed: {result['filename']}"
+    
+    except subprocess.TimeoutExpired:
+        result['error'] = "Conversion timed out"
+        result['message'] = f"Timeout: {result['filename']}"
+    except Exception as e:
+        result['error'] = str(e)
+        result['message'] = f"Error: {result['filename']}"
+    
+    return result

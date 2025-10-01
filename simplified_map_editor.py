@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QApplication, QFileDialog, QV
                              QHBoxLayout, QPushButton, QLabel, QGroupBox, QDockWidget,
                              QStatusBar, QMessageBox, QToolBar, QComboBox, QProgressDialog,
                              QTreeWidget, QTreeWidgetItem, QLineEdit, QInputDialog, QListWidgetItem)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QAction, QColor, QVector3D, QShortcut, QActionGroup, QFont  # QAction stays here
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QPropertyAnimation
+from PyQt6.QtGui import QAction, QColor, QVector3D, QShortcut, QActionGroup, QFont, QPixmap, QPainter, QTransform 
 from data_models import Entity, GridConfig, MapInfo, ObjectEntity, WorldSectorManager, ObjectParser, ObjectLoadResult
 from canvas.map_canvas_gpu import MapCanvas
 from file_converter import FileConverter
@@ -93,7 +93,7 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"Warning: Could not setup sector boundaries: {e}")
 
         # Set window title
-        self.setWindowTitle("AVATAR: The Game Level Editor | Version 1.0 | Made By: Jasper Zebra")
+        self.setWindowTitle("AVATAR: The Game Level Editor | Version 1.1 | Made By: Jasper Zebra")
 
         # Connect entity selection signal from canvas to handler - PROTECTED
         try:
@@ -1696,7 +1696,7 @@ class SimplifiedMapEditor(QMainWindow):
                 if progress_dialog.wasCanceled():
                     raise KeyboardInterrupt("User canceled the operation")
                 progress_dialog.setValue(percent)
-                progress_dialog.setLabelText(f"Converting files... {percent}%")
+                progress_dialog.setLabelText(f"Converting files, Please Wait. {percent}%")
                 QApplication.processEvents()
             
             # Convert files if needed
@@ -1840,13 +1840,13 @@ class SimplifiedMapEditor(QMainWindow):
             )
 
     def load_level_objects(self):
-        """Load objects from worldsectors folder with enhanced search - WITH COMPREHENSIVE RESET"""
+        """Load objects from worldsectors folder with enhanced search - WITH ANIMATED LOADING ICON AND LOG"""
         print("=== Starting enhanced load_level_objects ===")
         
-        # COMPREHENSIVE RESET FIRST - immediately when button is clicked (matching select_level)
+        # COMPREHENSIVE RESET FIRST
         self.reset_entire_editor_state()
         
-        # Select folder (could be level folder or worldsectors folder)
+        # Select folder
         selected_folder = QFileDialog.getExistingDirectory(
             self,
             "Select Level Folder (containing worldsectors)",
@@ -1866,13 +1866,7 @@ class SimplifiedMapEditor(QMainWindow):
             QMessageBox.warning(
                 self,
                 "No Worldsectors Found",
-                f"No worldsectors folder found in:\n{selected_folder}\n\n"
-                f"Searched for folders named:\n"
-                f"worldsectors\n"
-                f"WorldSectors\n"
-                f"worldsector\n"
-                f"sectors\n\n"
-                f"Also checked for .data.fcb files in subfolders."
+                f"No worldsectors folder found in:\n{selected_folder}"
             )
             return
         
@@ -1886,12 +1880,11 @@ class SimplifiedMapEditor(QMainWindow):
             QMessageBox.warning(
                 self,
                 "No Object Files Found",
-                f"No .data.fcb or .data.xml files found in:\n{worldsectors_info['relative_path']}\n\n"
-                f"Please select a folder containing worldsectors with .data.fcb files."
+                f"No .data.fcb or .data.xml files found in:\n{worldsectors_info['relative_path']}"
             )
             return
         
-        # Show confirmation dialog with location info
+        # Show confirmation dialog
         location_text = f"in {worldsectors_info['relative_path']}" if worldsectors_info['relative_path'] != "." else "in selected folder"
         
         message = (
@@ -1899,7 +1892,6 @@ class SimplifiedMapEditor(QMainWindow):
             f"{worldsectors_info['fcb_files']} .data.fcb files\n"
             f"{worldsectors_info['xml_files']} .converted.xml files\n"
             f"{worldsectors_info['data_xml_files']} .data.xml files\n\n"
-            f"This will convert FCB files to XML and load all objects.\n"
             f"Continue?"
         )
         
@@ -1916,12 +1908,63 @@ class SimplifiedMapEditor(QMainWindow):
         # Store worldsectors path
         self.worldsectors_path = worldsectors_path
         
-        # Create progress dialog
-        progress_dialog = QProgressDialog("Loading objects...", "Cancel", 0, 100, self)
+        # Create CUSTOM progress dialog with loading icon and log
+        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QProgressBar, QLabel, QTextEdit, QHBoxLayout
+        
+        progress_dialog = QDialog(self)
         progress_dialog.setWindowTitle("Loading Level Objects")
-        progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        progress_dialog.setMinimumDuration(0)
-        progress_dialog.setValue(0)
+        progress_dialog.setModal(True)
+        progress_dialog.setMinimumSize(800, 400)
+        
+        layout = QVBoxLayout(progress_dialog)
+        
+        # Add loading icon at the top
+        icon_layout = QHBoxLayout()
+        icon_layout.addStretch()
+        
+        # Create rotating loading icon
+        background_path = "default_i3.png"  # Update to actual path
+        rotating_path = "default_i5.png"     # Update to actual path
+        
+        loading_icon = RotatingLoadingIcon(background_path, rotating_path)
+        icon_layout.addWidget(loading_icon)
+        icon_layout.addStretch()
+        layout.addLayout(icon_layout)
+        
+        # Status label
+        status_label = QLabel("Initializing...")
+        status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(status_label)
+        
+        # Progress bar
+        progress_bar = QProgressBar()
+        progress_bar.setRange(0, 100)
+        progress_bar.setValue(0)
+        layout.addWidget(progress_bar)
+        
+        # Log box for conversion messages
+        log_box = QTextEdit()
+        log_box.setReadOnly(True)
+        log_box.setMaximumHeight(200)
+        log_box.setStyleSheet("""
+            QTextEdit {
+                background-color: #333333;
+                color: #d4d4d4;
+                font-family: 'Consolas', 'Courier New', monospace;
+                font-size: 16px;
+                border: 1px solid #3e3e3e;
+                border-radius: 8px;
+                padding: 8px;
+            }
+        """)
+        layout.addWidget(log_box)
+
+        # Cancel button
+        cancel_button = QPushButton("Cancel")
+        layout.addWidget(cancel_button)
+        
+        progress_dialog.show()
+        QApplication.processEvents()
         
         print("Creating ObjectLoadingThread...")
         
@@ -1935,18 +1978,24 @@ class SimplifiedMapEditor(QMainWindow):
             
             # Connect thread signals
             self.object_loading_thread.progress_updated.connect(
-                lambda p: progress_dialog.setValue(int(p * 100))
+                lambda p: progress_bar.setValue(int(p * 100))
             )
             self.object_loading_thread.status_updated.connect(
-                lambda s: progress_dialog.setLabelText(s)
+                lambda s: status_label.setText(s)
             )
+            
+            # NEW: Connect log messages signal
+            self.object_loading_thread.log_message.connect(
+                lambda msg: self.append_log_message(log_box, msg)
+            )
+            
             self.object_loading_thread.objects_loaded.connect(self.on_objects_loaded)
             self.object_loading_thread.finished_loading.connect(
-                lambda result: self.on_object_loading_finished(result, progress_dialog)
+                lambda result: self.on_object_loading_finished(result, progress_dialog, loading_icon)
             )
             
             # Handle cancel button
-            progress_dialog.canceled.connect(self.object_loading_thread.stop)
+            cancel_button.clicked.connect(lambda: self.cancel_loading(self.object_loading_thread, progress_dialog, loading_icon))
             
             print("Starting object loading thread...")
             
@@ -1954,6 +2003,7 @@ class SimplifiedMapEditor(QMainWindow):
             self.object_loading_thread.start()
             
         except Exception as e:
+            loading_icon.stop()
             progress_dialog.close()
             QMessageBox.critical(
                 self,
@@ -1963,6 +2013,51 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"Error starting object loading: {e}")
             import traceback
             traceback.print_exc()
+
+    def append_log_message(self, log_box, message):
+        """Append a message to the log box and auto-scroll"""
+        log_box.append(message)
+        # Auto-scroll to bottom
+        scrollbar = log_box.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+    def cancel_loading(self, thread, dialog, loading_icon):
+        """Cancel the loading operation"""
+        thread.stop()
+        loading_icon.stop()
+        dialog.close()
+
+    def on_object_loading_finished(self, result, progress_dialog, loading_icon):
+        """Handle when object loading is complete - UPDATED to stop icon"""
+        loading_icon.stop()
+        progress_dialog.close()
+        
+        # Show results
+        if result.conversion_errors:
+            error_msg = "\n".join(result.conversion_errors[:5])
+            if len(result.conversion_errors) > 5:
+                error_msg += f"\n... and {len(result.conversion_errors) - 5} more errors"
+            
+            QMessageBox.warning(
+                self,
+                "Loading Completed with Errors",
+                f"Loaded {result.loaded_objects} objects from {result.sectors_processed} sectors.\n\n"
+                f"Errors encountered:\n{error_msg}"
+            )
+        else:
+            QMessageBox.information(
+                self,
+                "Objects Loaded Successfully",
+                f"Successfully loaded {result.loaded_objects} objects from {result.sectors_processed} sectors!"
+            )
+        
+        # Update status
+        self.status_bar.showMessage(
+            f"Loaded {len(self.entities)} entities and {len(self.objects)} objects"
+        )
+        
+        # Reset view to show all content
+        self.reset_view()
 
     def load_selected_level_from_dialog(self, dialog, level_list):
         """Load the level selected in the dialog - ENHANCED"""
@@ -2010,7 +2105,7 @@ class SimplifiedMapEditor(QMainWindow):
                 if progress_dialog:
                     percent = int(10 + progress * 30)  # 10% to 40%
                     progress_dialog.setValue(percent)
-                    progress_dialog.setLabelText(f"Converting world files... {percent}%")
+                    progress_dialog.setLabelText(f"Converting world files, Please Wait. {percent}%")
                     QApplication.processEvents()
             
             try:
@@ -2348,14 +2443,14 @@ class SimplifiedMapEditor(QMainWindow):
             return
         
         try:
-            progress_dialog = QProgressDialog("Saving level...", "Cancel", 0, 100, self)
+            progress_dialog = QProgressDialog("Saving level, Please Wait.", "Cancel", 0, 100, self)
             progress_dialog.setWindowTitle("Saving Level")
             progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
             progress_dialog.setMinimumDuration(0)
             progress_dialog.setValue(0)
             
             # Step 1: Save all XML files first (with current entity positions)
-            progress_dialog.setLabelText("Saving XML files with current positions...")
+            progress_dialog.setLabelText("Saving XML files with current positions, Please Wait.")
             progress_dialog.setValue(10)
             QApplication.processEvents()
             
@@ -2363,14 +2458,14 @@ class SimplifiedMapEditor(QMainWindow):
             self.save_all_xml_files_before_conversion()
             
             # Step 2: Convert main XML files to FCB
-            progress_dialog.setLabelText("Converting main files to FCB...")
+            progress_dialog.setLabelText("Converting main files to FCB, Please Wait.")
             progress_dialog.setValue(30)
             QApplication.processEvents()
             
             main_files_converted = self._convert_main_xml_to_fcb()
             
             # Step 3: Convert WorldSector files - FIXED METHOD
-            progress_dialog.setLabelText("Converting WorldSector files to FCB...")
+            progress_dialog.setLabelText("Converting WorldSector files to FCB, Please Wait.")
             progress_dialog.setValue(60)
             QApplication.processEvents()
             
@@ -2865,7 +2960,7 @@ class SimplifiedMapEditor(QMainWindow):
                 return
             
             # Step 2: Convert .converted.xml back to .data.fcb
-            progress_dialog = QProgressDialog("Converting XML to FCB...", "Cancel", 0, 100, self)
+            progress_dialog = QProgressDialog("Converting XML to FCB, Please Wait.", "Cancel", 0, 100, self)
             progress_dialog.setWindowTitle("Saving WorldSectors")
             progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
             progress_dialog.setMinimumDuration(0)
@@ -2885,11 +2980,11 @@ class SimplifiedMapEditor(QMainWindow):
                 if xml_file.endswith('.data.fcb.converted.xml'):
                     fcb_file = xml_file.replace('.converted.xml', '')
                     
-                    progress_dialog.setLabelText(f"Converting {os.path.basename(fcb_file)}...")
+                    progress_dialog.setLabelText(f"Converting {os.path.basename(fcb_file)}, Please Wait.")
                     progress_dialog.setValue(int((i / len(modified_files)) * 100))
                     QApplication.processEvents()
                     
-                    print(f"Converting: {os.path.basename(xml_file)} â†’ {os.path.basename(fcb_file)}")
+                    print(f"Converting: {os.path.basename(xml_file)} -> {os.path.basename(fcb_file)}, Please Wait.")
                     
                     # Use the file converter to convert back to FCB
                     success = self.file_converter.convert_converted_xml_back_to_fcb(fcb_file)
@@ -3086,14 +3181,14 @@ class SimplifiedMapEditor(QMainWindow):
         success_count = 0
         error_count = 0
         
-        print(f"Converting {len(xml_files)} data XML files to FCB...")
+        print(f"Converting {len(xml_files)} data XML files to FCB, Please Wait.")
         
         for xml_file in xml_files:
             try:
                 # Get the FCB path
                 fcb_file = xml_file.replace('.data.xml', '.data.fcb')
                 
-                print(f"Converting: {os.path.basename(xml_file)} -> {os.path.basename(fcb_file)}")
+                print(f"Converting: {os.path.basename(xml_file)} -> {os.path.basename(fcb_file)}, Please Wait.")
                 
                 # Check XML file size before conversion
                 xml_size = os.path.getsize(xml_file)
@@ -5998,7 +6093,7 @@ class SimplifiedMapEditor(QMainWindow):
                 return
             
             # Create progress dialog
-            progress_dialog = QProgressDialog("Saving XML files...", "Cancel", 0, 100, self)
+            progress_dialog = QProgressDialog("Saving XML files, Please Wait.", "Cancel", 0, 100, self)
             progress_dialog.setWindowTitle("Saving XML Files")
             progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
             progress_dialog.setMinimumDuration(0)
@@ -6011,7 +6106,7 @@ class SimplifiedMapEditor(QMainWindow):
                 if progress_dialog.wasCanceled():
                     break
                     
-                progress_dialog.setLabelText(f"Saving {file_info['name']}...")
+                progress_dialog.setLabelText(f"Saving {file_info['name']}, Please Wait.")
                 progress_dialog.setValue(int((i / total_files) * 100))
                 QApplication.processEvents()
                 
@@ -6166,37 +6261,6 @@ class SimplifiedMapEditor(QMainWindow):
         except Exception as e:
             print(f"   Error reading saved file: {e}")
 
-    def on_object_loading_finished(self, result, progress_dialog):
-        """Handle when object loading is complete"""
-        progress_dialog.close()
-        
-        # Show results
-        if result.conversion_errors:
-            error_msg = "\n".join(result.conversion_errors[:5])
-            if len(result.conversion_errors) > 5:
-                error_msg += f"\n... and {len(result.conversion_errors) - 5} more errors"
-            
-            QMessageBox.warning(
-                self,
-                "Loading Completed with Errors",
-                f"Loaded {result.loaded_objects} objects from {result.sectors_processed} sectors.\n\n"
-                f"Errors encountered:\n{error_msg}"
-            )
-        else:
-            QMessageBox.information(
-                self,
-                "Objects Loaded Successfully",
-                f"Successfully loaded {result.loaded_objects} objects from {result.sectors_processed} sectors!"
-            )
-        
-        # Update status
-        self.status_bar.showMessage(
-            f"Loaded {len(self.entities)} entities and {len(self.objects)} objects"
-        )
-        
-        # Reset view to show all content
-        self.reset_view()
-
     def save_objects(self):
         """Save objects back to FCB format"""
         if not self.objects or not self.worldsectors_path:
@@ -6223,7 +6287,7 @@ class SimplifiedMapEditor(QMainWindow):
             self._save_modified_object_xml_files()
             
             # Create progress dialog
-            progress_dialog = QProgressDialog("Saving objects...", "Cancel", 0, 100, self)
+            progress_dialog = QProgressDialog("Saving objects, Please Wait.", "Cancel", 0, 100, self)
             progress_dialog.setWindowTitle("Saving Objects")
             progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
             progress_dialog.setMinimumDuration(0)
@@ -7468,6 +7532,7 @@ class ObjectLoadingThread(QThread):
     
     progress_updated = pyqtSignal(float)  # Progress from 0.0 to 1.0
     status_updated = pyqtSignal(str)      # Status message
+    log_message = pyqtSignal(str)         # NEW: Log messages for the log box
     objects_loaded = pyqtSignal(list)     # List of loaded objects
     finished_loading = pyqtSignal(object) # ObjectLoadResult
     
@@ -7483,62 +7548,79 @@ class ObjectLoadingThread(QThread):
         self.should_stop = True
     
     def run(self):
-        """Run the object loading process with cleanup"""
+        """Run the object loading process with cleanup - UPDATED PROGRESS TRACKING"""
         try:
             from data_models import ObjectLoadResult, WorldSectorManager, ObjectParser
             
             result = ObjectLoadResult()
             
-            # Step 1: Cleanup duplicate files first
+            # Calculate progress weights
+            CLEANUP_WEIGHT = 0.02      # 2% - Cleanup
+            SCAN_WEIGHT = 0.03         # 3% - Initial scan
+            CONVERT_WEIGHT = 0.70      # 70% - File conversion (main work)
+            RESCAN_WEIGHT = 0.05       # 5% - Re-scan after conversion
+            LOAD_WEIGHT = 0.20         # 20% - Loading objects from XML
+            
+            current_progress = 0.0
+            
+            # Step 1: Cleanup (0% - 2%)
             self.status_updated.emit("Cleaning up duplicate files...")
-            self.progress_updated.emit(0.05)
+            self.progress_updated.emit(0.0)
             self.cleanup_duplicate_xml_files(self.worldsectors_path)
+            current_progress = CLEANUP_WEIGHT
+            self.progress_updated.emit(current_progress)
             
-            # Step 2: Scan for .converted.xml files only
+            # Step 2: Initial scan (2% - 5%)
             self.status_updated.emit("Scanning for converted XML files...")
-            self.progress_updated.emit(0.1)
-            
             sectors = WorldSectorManager.scan_worldsectors_folder(self.worldsectors_path)
             print(f"Found {len(sectors)} sectors")
+            current_progress += SCAN_WEIGHT
+            self.progress_updated.emit(current_progress)
             
             if self.should_stop:
                 return
             
-            # Step 3: Convert FCB files if needed
+            # Step 3: Convert FCB files (5% - 75%)
             self.status_updated.emit("Converting .data.fcb files to XML...")
-            self.progress_updated.emit(0.2)
-            
-            def conversion_progress(progress):
-                overall_progress = 0.2 + (progress * 0.3)  # 20% to 50%
-                self.progress_updated.emit(overall_progress)
-            
+
+            # Create a custom callback that also logs
+            def conversion_progress_with_logging(progress, message=None):
+                # Update progress bar
+                overall = current_progress + (progress * CONVERT_WEIGHT)
+                self.progress_updated.emit(overall)
+                
+                # If there's a message, emit it to the log
+                if message:
+                    self.log_message.emit(message)
+
             success_count, error_count, converted_files = self.file_converter.convert_data_fcb_files(
                 self.worldsectors_path,
-                progress_callback=conversion_progress
+                progress_callback=conversion_progress_with_logging
             )
-            
+
             print(f"Conversion results: {success_count} successful, {error_count} failed")
+            current_progress += CONVERT_WEIGHT
+            self.progress_updated.emit(current_progress)
             
             if self.should_stop:
                 return
             
-            # Step 4: Re-scan after conversion
+            # Step 4: Re-scan after conversion (75% - 80%)
             self.status_updated.emit("Re-scanning for XML files...")
-            self.progress_updated.emit(0.55)
-            
             sectors = WorldSectorManager.scan_worldsectors_folder(self.worldsectors_path)
             result.sectors_processed = len(sectors)
             result.loaded_sectors = sectors
-            
             print(f"After conversion, found {len(sectors)} sectors")
+            current_progress += RESCAN_WEIGHT
+            self.progress_updated.emit(current_progress)
             
-            # Step 5: Load objects from .converted.xml files
+            # Step 5: Load objects from XML files (80% - 100%)
             self.status_updated.emit("Loading objects from converted XML files...")
-            self.progress_updated.emit(0.6)
-            
             all_objects = []
             
-            # Process each sector
+            total_xml_files = sum(len(sector.data_xml_files) for sector in sectors)
+            files_processed = 0
+            
             for i, sector in enumerate(sectors):
                 if self.should_stop:
                     break
@@ -7546,7 +7628,6 @@ class ObjectLoadingThread(QThread):
                 print(f"Processing sector {i+1}/{len(sectors)} with {len(sector.data_xml_files)} XML files")
                 sector_objects = []
                 
-                # Load objects from .converted.xml files only
                 for xml_file in sector.data_xml_files:
                     try:
                         if xml_file.endswith('.converted.xml'):
@@ -7558,7 +7639,7 @@ class ObjectLoadingThread(QThread):
                             
                             print(f"Extracted {len(objects)} objects from {os.path.basename(xml_file)}")
                             
-                            # Determine map assignment for each object
+                            # Determine map assignment
                             for obj in objects:
                                 if self.grid_config and self.grid_config.maps:
                                     obj.map_name = self._determine_object_map(obj)
@@ -7572,27 +7653,25 @@ class ObjectLoadingThread(QThread):
                         print(error_msg)
                         result.conversion_errors.append(error_msg)
                         result.failed_objects += 1
+                    
+                    # Update progress for this file
+                    files_processed += 1
+                    if total_xml_files > 0:
+                        file_progress = files_processed / total_xml_files
+                        overall = current_progress + (file_progress * LOAD_WEIGHT)
+                        self.progress_updated.emit(overall)
+                        self.status_updated.emit(f"Loading objects: {files_processed}/{total_xml_files} files")
                 
-                # Update sector object count
                 sector.object_count = len(sector_objects)
                 all_objects.extend(sector_objects)
-                
-                print(f"Sector {i+1} loaded {len(sector_objects)} objects (total so far: {len(all_objects)})")
-                
-                # Update progress
-                if len(sectors) > 0:
-                    sector_progress = (i + 1) / len(sectors)
-                    overall_progress = 0.6 + (sector_progress * 0.3)
-                    self.progress_updated.emit(overall_progress)
-                
-                self.status_updated.emit(f"Loaded {len(sector_objects)} objects from sector {i+1}")
+                print(f"Sector {i+1} loaded {len(sector_objects)} objects (total: {len(all_objects)})")
             
             # Final results
             result.total_objects = len(all_objects)
             result.loaded_objects = len(all_objects)
             
             print(f"Loading complete: {len(all_objects)} total objects loaded")
-            self.status_updated.emit(f"Loading complete: {len(all_objects)} objects loaded")
+            self.status_updated.emit(f"Complete: {len(all_objects)} objects loaded")
             self.progress_updated.emit(1.0)
             
             # Emit results
@@ -7883,3 +7962,62 @@ class LevelFileConfig:
             self.optional_files[file_type]["enabled"] = enabled
             return True
         return False
+    
+class RotatingLoadingIcon(QLabel):
+    """Custom rotating loading icon widget"""
+    
+    def __init__(self, background_path, rotating_path, parent=None):
+        super().__init__(parent)
+        
+        # Load images
+        self.background = QPixmap(background_path)
+        self.rotating = QPixmap(rotating_path)
+        
+        # Check if images loaded
+        if self.background.isNull():
+            print(f"Failed to load background: {background_path}")
+            self.background = QPixmap(64, 64)
+            self.background.fill(Qt.GlobalColor.lightGray)
+        
+        if self.rotating.isNull():
+            print(f"Failed to load rotating image: {rotating_path}")
+            self.rotating = QPixmap(64, 64)
+            self.rotating.fill(Qt.GlobalColor.blue)
+        
+        # Set widget size to match images
+        size = max(self.background.width(), self.background.height())
+        self.setFixedSize(size, size)
+        
+        # Rotation angle
+        self.rotation_angle = 0
+        
+        # Setup rotation timer
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.rotate)
+        self.timer.start(100)  # Update every 50ms (20 FPS)
+    
+    def rotate(self):
+        """Rotate the icon by 30 degrees (one clock position)"""
+        self.rotation_angle = (self.rotation_angle + 30) % 360  # 30 degrees = 1/12 of circle
+        self.update()
+    
+    def paintEvent(self, event):
+        """Custom paint to draw background and rotated foreground"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        
+        # Draw static background
+        bg_x = (self.width() - self.background.width()) // 2
+        bg_y = (self.height() - self.background.height()) // 2
+        painter.drawPixmap(bg_x, bg_y, self.background)
+        
+        # Draw rotated foreground
+        painter.translate(self.width() / 2, self.height() / 2)
+        painter.rotate(self.rotation_angle)
+        painter.translate(-self.rotating.width() / 2, -self.rotating.height() / 2)
+        painter.drawPixmap(0, 0, self.rotating)
+    
+    def stop(self):
+        """Stop the rotation"""
+        self.timer.stop()
