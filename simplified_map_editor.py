@@ -93,6 +93,10 @@ class SimplifiedMapEditor(QMainWindow):
         # Initialize file configuration
         self.file_config = LevelFileConfig()
 
+        # Initialize theme and mouse preferences
+        self.force_dark_theme = False  # Manual theme override
+        self.invert_mouse_pan = False  # Mouse wheel pan inversion
+
         # Setup conversion tools
         try:
             self.setup_conversion_tools()
@@ -131,6 +135,19 @@ class SimplifiedMapEditor(QMainWindow):
         
         # Set window size
         self.resize(1800, 1100)
+
+        # Apply initial theme based on force_dark_theme setting
+        try:
+            self.apply_theme()
+            # Update the theme toggle button state to match
+            if hasattr(self, 'theme_toggle_action'):
+                self.theme_toggle_action.setChecked(self.force_dark_theme)
+                if self.force_dark_theme:
+                    self.theme_toggle_action.setText("Light Mode")
+                else:
+                    self.theme_toggle_action.setText("Dark Mode")
+        except Exception as e:
+            print(f"Warning: Could not apply initial theme: {e}")
 
         try:
             setup_complete_smart_system(self)
@@ -426,6 +443,17 @@ class SimplifiedMapEditor(QMainWindow):
         toggle_entities_action.setCheckable(True)
         toggle_entities_action.setChecked(True)
         view_menu.addAction(toggle_entities_action)
+        
+        view_menu.addSeparator()
+        
+        # Invert mouse pan action
+        invert_mouse_action = QAction("Invert Mouse Pan", self)
+        invert_mouse_action.triggered.connect(self.toggle_invert_mouse)
+        invert_mouse_action.setCheckable(True)
+        invert_mouse_action.setChecked(False)
+        invert_mouse_action.setToolTip("Invert middle mouse button camera panning direction")
+        view_menu.addAction(invert_mouse_action)
+        self.invert_mouse_action = invert_mouse_action
             
         # Add to Tools menu or create one
         tools_menu = self.menuBar().addMenu("Tools")
@@ -503,6 +531,14 @@ class SimplifiedMapEditor(QMainWindow):
         toggle_entities_action.setChecked(True)
         toggle_entities_action.setToolTip("Show/hide entities (E)")
         self.toolbar.addAction(toggle_entities_action)
+        
+        # Theme toggle button
+        self.theme_toggle_action = QAction("Dark Mode", self)
+        self.theme_toggle_action.triggered.connect(self.toggle_theme)
+        self.theme_toggle_action.setCheckable(True)
+        self.theme_toggle_action.setChecked(False)
+        self.theme_toggle_action.setToolTip("Toggle between Light and Dark theme")
+        self.toolbar.addAction(self.theme_toggle_action)
                             
         self.toolbar.addSeparator()
         
@@ -553,7 +589,6 @@ class SimplifiedMapEditor(QMainWindow):
         select_level_button = QPushButton("Select Level")
         select_level_button.clicked.connect(self.select_level)
         select_level_button.setToolTip("Load complete level (world data + level objects)\nTwo-step process: select worlds folder, then levels folder")
-        # Make the button larger and more prominent
         select_level_button.setMinimumHeight(45)
         select_level_button.setStyleSheet("""
             QPushButton {
@@ -576,7 +611,7 @@ class SimplifiedMapEditor(QMainWindow):
         # Level info label
         self.level_info_label = QLabel("No level loaded")
         self.level_info_label.setWordWrap(True)
-        self.level_info_label.setStyleSheet("QLabel { color: white; font-style: italic; margin: 5px; }")
+        self.level_info_label.setStyleSheet("font-style: italic; margin: 5px;")
         level_layout.addWidget(self.level_info_label)
         
         dock_layout.addWidget(level_group)
@@ -654,10 +689,12 @@ class SimplifiedMapEditor(QMainWindow):
         # Add header explaining the color system
         header_label = QLabel("Entity type color coding:")
         header_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        header_label.setStyleSheet("color: white; margin-bottom: 8px; padding: 2px;")
+        header_label.setStyleSheet("margin-bottom: 8px; padding: 2px;")
         entity_types_layout.addWidget(header_label)
+        self.entity_colors_header = header_label  # Store reference for theme updates
 
         # Add color samples with labels
+        self.color_legend_labels = []  # Store references for theme updates
         self.create_color_legend_item(entity_types_layout, QColor(52, 152, 255), "Vehicles")
         self.create_color_legend_item(entity_types_layout, QColor(46, 255, 113), "NPCs/Characters")
         self.create_color_legend_item(entity_types_layout, QColor(255, 76, 60), "Weapons/Combat")
@@ -677,12 +714,12 @@ class SimplifiedMapEditor(QMainWindow):
         info_layout = QVBoxLayout(info_group)
         
         self.entity_count_label = QLabel("Entities: 0")
-        self.entity_count_label.setStyleSheet("font-weight: bold; color: white;")
+        self.entity_count_label.setStyleSheet("font-weight: bold;")
         info_layout.addWidget(self.entity_count_label)
         
         self.selected_entity_label = QLabel("No entity selected")
         self.selected_entity_label.setWordWrap(True)
-        self.selected_entity_label.setStyleSheet("color: white; margin-top: 5px;")
+        self.selected_entity_label.setStyleSheet("margin-top: 5px;")
         info_layout.addWidget(self.selected_entity_label)
         
         dock_layout.addWidget(info_group)
@@ -701,8 +738,19 @@ class SimplifiedMapEditor(QMainWindow):
         dock.setVisible(True)
         dock.show()
         
+        # Update legend label colors for the current theme immediately
+        if hasattr(self, "apply_theme"):
+            if getattr(self, "force_dark_theme", False):
+                self.entity_colors_header.setStyleSheet("color: white; margin-bottom: 8px; padding: 2px;")
+                for label in self.color_legend_labels:
+                    label.setStyleSheet("color: white;")
+            else:
+                self.entity_colors_header.setStyleSheet("color: black; margin-bottom: 8px; padding: 2px;")
+                for label in self.color_legend_labels:
+                    label.setStyleSheet("color: black;")
+
         print("Side panel created for 2D level editor")
-              
+
     def create_color_legend_item(self, layout, color, text):
         """Create a color sample with label for the legend - ENHANCED"""
         item_layout = QHBoxLayout()
@@ -727,10 +775,14 @@ class SimplifiedMapEditor(QMainWindow):
             }}
         """)
         
-        # Create label with improved styling
+        # Create label with improved styling (color will be set by theme)
         label = QLabel(text)
         label.setFont(QFont("Arial", 10))
-        label.setStyleSheet("color: white; margin-left: 8px;")
+        label.setStyleSheet("margin-left: 8px;")
+        
+        # Store reference for theme updates
+        if hasattr(self, 'color_legend_labels'):
+            self.color_legend_labels.append(label)
         
         # Add to layout with label
         item_layout.addWidget(color_sample)
@@ -5338,6 +5390,9 @@ class SimplifiedMapEditor(QMainWindow):
         
         # Create canvas for editing
         self.canvas = MapCanvas(self)
+        # Set invert mouse pan preference if canvas supports it
+        if hasattr(self.canvas, 'invert_mouse_pan'):
+            self.canvas.invert_mouse_pan = self.invert_mouse_pan
         main_layout.addWidget(self.canvas)
         
         # Create status bar
@@ -5391,7 +5446,7 @@ class SimplifiedMapEditor(QMainWindow):
         self.entity_tree.setHeaderLabels(["Name", "ID", "Position"])
         self.entity_tree.setColumnWidth(0, 180)
         self.entity_tree.setColumnWidth(1, 80)
-        self.entity_tree.setAlternatingRowColors(True)
+        self.entity_tree.setAlternatingRowColors(False)
         self.entity_tree.setSelectionMode(QTreeWidget.SelectionMode.ExtendedSelection)
         self.entity_tree.itemSelectionChanged.connect(self.on_entity_tree_selection_changed)
         dock_layout.addWidget(self.entity_tree)
@@ -5450,7 +5505,7 @@ class SimplifiedMapEditor(QMainWindow):
         self.entity_tree.itemDoubleClicked.connect(self.on_entity_tree_double_clicked)
 
     def on_entity_tree_selection_changed(self):
-        """Handle selection change in the entity tree - FIXED to update gizmo"""
+        """Handle selection change in the entity tree - FIXED to fully select entity like grid selection"""
         # Get selected items
         selected_items = self.entity_tree.selectedItems()
         
@@ -5479,32 +5534,27 @@ class SimplifiedMapEditor(QMainWindow):
             self.canvas.update()
             return
         
-        # Set canvas selection
+        # CRITICAL FIX: Use the same handler as grid selection to ensure full selection
+        # This ensures the entity is fully selected for the entity editor (Ctrl+E)
+        primary_entity = selected_entities[0]
+        
+        # Print which entity was selected from the browser
+        print(f"Entity Browser: Selected '{primary_entity.name}' (ID: {primary_entity.id})")
+        
+        # Set canvas selection for multiple selection support
         if hasattr(self.canvas, 'selected'):
             self.canvas.selected = selected_entities
         
-        # Set primary selected entity
-        self.selected_entity = selected_entities[0]
-        if hasattr(self.canvas, 'selected_entity'):
-            self.canvas.selected_entity = self.selected_entity
+        # Call the same handler as grid selection to ensure consistent behavior
+        # This ensures the entity is fully recognized by entity editor and all systems
+        self.on_entity_selected(primary_entity)
         
-        # CRITICAL FIX: Update gizmo for the selected entity
-        if hasattr(self.canvas, 'gizmo_renderer') and self.selected_entity:
-            print(f"ðŸŽ¯ Updating gizmo for selected entity: {self.selected_entity.name}")
-            self.canvas.gizmo_renderer.update_gizmo_for_entity(self.selected_entity)
-        
-        # Update UI
-        self.update_ui_for_selected_entity(self.selected_entity)
-        
-        # Update canvas
-        self.canvas.update()
-        
-        # If gizmo is available, position it for multiple entities
-        if hasattr(self.canvas, 'gizmo_renderer') and not self.canvas.gizmo_renderer.rotation_gizmo.hidden:
-            # For multiple selection, keep gizmo on the first entity
-            if len(selected_entities) > 1:
-                print(f"ðŸŽ¯ Multiple entities selected ({len(selected_entities)}), gizmo on: {self.selected_entity.name}")
-
+        # If multiple selection, also update canvas.selected list
+        if len(selected_entities) > 1:
+            if hasattr(self.canvas, 'selected'):
+                self.canvas.selected = selected_entities
+            print(f"Multiple entities selected ({len(selected_entities)}), primary: {primary_entity.name}")
+            
     def on_entity_tree_double_clicked(self, item, column):
         """Enhanced double-click handler that shows gizmo and centers view"""
         # Get the entity
@@ -5778,20 +5828,15 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"Error fixing entity colors: {e}")
 
     def update_entity_tree(self):
-        """Update the entity tree with current entities and grouping - ENHANCED WITH COLORS"""
-        # Clear the tree
+        """Update the entity tree with current entities and grouping, theme-aware"""
         self.entity_tree.clear()
         
         if not self.entities:
             return
         
-        # Get grouping method
         grouping = self.group_combo.currentText()
-        
-        # Get filter text
         filter_text = self.entity_filter.text().lower()
         
-        # Create entity items based on grouping
         if grouping == "No Grouping":
             self._populate_tree_no_grouping(filter_text)
         elif grouping == "By Map":
@@ -5799,20 +5844,14 @@ class SimplifiedMapEditor(QMainWindow):
         elif grouping == "By Source":
             self._populate_tree_by_source(filter_text)
         elif grouping == "By Type":
-            self._populate_tree_by_type_enhanced(filter_text)  # Use enhanced version
+            self._populate_tree_by_type_enhanced(filter_text)
         
-        # Expand all top-level items
+        # Expand top-level items
         for i in range(self.entity_tree.topLevelItemCount()):
             self.entity_tree.topLevelItem(i).setExpanded(True)
-        
-        print(f"Entity tree updated with color coding for {len(self.entities)} entities")
 
     def _populate_tree_by_type_enhanced(self, filter_text=""):
-        """Enhanced type grouping with color-coded group headers"""
-        # Create type groups with color-coded headers
         type_groups = {}
-        
-        # Define group colors (matching legend)
         group_colors = {
             "Vehicle": QColor(52, 152, 255),
             "NPC": QColor(46, 255, 113),
@@ -5826,67 +5865,62 @@ class SimplifiedMapEditor(QMainWindow):
             "WorldSectors": QColor(255, 100, 100),
             "Unknown": QColor(130, 130, 130)
         }
-        
-        # Sort entities by inferred type
+
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-            
-            # Determine entity type
+
             entity_type = self._determine_entity_type_for_browser(entity)
-            
-            # Check for worldsectors override
             source_file_path = getattr(entity, 'source_file_path', None)
             source_file = getattr(entity, 'source_file', None)
-            if (source_file == 'worldsectors' or 
-                (source_file_path and 'worldsector' in source_file_path.lower())):
+            if source_file == 'worldsectors' or (source_file_path and 'worldsector' in source_file_path.lower()):
                 entity_type = "WorldSectors"
-            
-            # Create type group if not exists
+
+            # Create group header if it doesn't exist
             if entity_type not in type_groups:
                 type_group = QTreeWidgetItem()
-                type_group.setText(0, f"{entity_type} ({0})")  # Will update count later
-                
-                # Set group header color
+                type_group.setText(0, f"{entity_type} (0)")
+                # Keep background color
                 group_color = group_colors.get(entity_type, group_colors["Unknown"])
-                
-                # Create colored background for group header
                 bg_color = QColor(group_color)
-                bg_color.setAlpha(80)  # Semi-transparent
+                bg_color.setAlpha(80)
                 type_group.setBackground(0, bg_color)
-                
-                # Set contrasting text color
-                if entity_type in ["Trigger", "Light"]:  # Yellow/light colors need dark text
-                    type_group.setForeground(0, QColor(0, 0, 0))  # Black text
-                else:
-                    type_group.setForeground(0, QColor(255, 255, 255))  # White text
-                
-                # Make group header bold
+
+                # Use theme-aware text for header
+                self._set_item_theme_color(type_group)
+
+                # Bold font for group headers
                 font = type_group.font(0)
                 font.setBold(True)
                 type_group.setFont(0, font)
-                
+
                 self.entity_tree.addTopLevelItem(type_group)
                 type_groups[entity_type] = {'group': type_group, 'count': 0}
-            
-            # Add entity to type group
+
+            # Add entity to group
             item = QTreeWidgetItem(type_groups[entity_type]['group'])
             item.setText(0, entity.name)
             item.setText(1, entity.id)
             item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
             item.setData(0, Qt.ItemDataRole.UserRole, entity)
-            
-            # Apply color coding to the entity item
-            self._set_item_color_by_source(item, entity)
-            
-            # Update count
+
+            # Theme-aware text color
+            self._set_item_theme_color(item)
+
             type_groups[entity_type]['count'] += 1
-        
-        # Update group headers with counts
+
+        # Update group counts
         for entity_type, group_data in type_groups.items():
             count = group_data['count']
             group_data['group'].setText(0, f"{entity_type} ({count})")
+            # Apply theme-aware color again after updating text
+            self._set_item_theme_color(group_data['group'])
+
+    def _set_item_theme_color(self, item):
+        """Set QTreeWidgetItem text color based on current theme"""
+        color = QColor(255, 255, 255) if self.force_dark_theme else QColor(0, 0, 0)
+        for col in range(item.columnCount()):
+            item.setForeground(col, color)
 
     def create_color_legend_group(self):
         """Enhanced color legend with better organization"""
@@ -5912,206 +5946,126 @@ class SimplifiedMapEditor(QMainWindow):
         self.create_color_legend_item(legend_layout, QColor(130, 130, 130), "Dark Gray - Unknown Type") 
         
     def _populate_tree_no_grouping(self, filter_text=""):
-        """Populate tree with no grouping"""
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-                
-            # Create item
+            
             item = QTreeWidgetItem()
             item.setText(0, entity.name)
             item.setText(1, entity.id)
             item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
-            
-            # Store entity reference
             item.setData(0, Qt.ItemDataRole.UserRole, entity)
             
-            # Color based on source
-            self._set_item_color_by_source(item, entity)
+            # Set theme-aware text color
+            self._set_item_theme_color(item)
             
             self.entity_tree.addTopLevelItem(item)
 
     def _populate_tree_by_map(self, filter_text=""):
-        """Populate tree grouped by map"""
-        # Create map groups
         map_groups = {}
         
-        # Default group for entities without a map
         no_map_group = QTreeWidgetItem()
         no_map_group.setText(0, "No Map")
         no_map_group.setBackground(0, QColor(200, 200, 200, 100))
         self.entity_tree.addTopLevelItem(no_map_group)
         
-        # Sort entities by map
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-                
+            
             map_name = entity.map_name
             if not map_name:
-                # Add to "No Map" group
                 item = QTreeWidgetItem(no_map_group)
-                item.setText(0, entity.name)
-                item.setText(1, entity.id)
-                item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
-                item.setData(0, Qt.ItemDataRole.UserRole, entity)
-                self._set_item_color_by_source(item, entity)
             else:
-                # Create map group if not exists
                 if map_name not in map_groups:
                     map_group = QTreeWidgetItem()
                     map_group.setText(0, os.path.basename(map_name))
                     map_group.setBackground(0, QColor(220, 240, 255, 100))
                     self.entity_tree.addTopLevelItem(map_group)
                     map_groups[map_name] = map_group
-                
-                # Add entity to map group
                 item = QTreeWidgetItem(map_groups[map_name])
-                item.setText(0, entity.name)
-                item.setText(1, entity.id)
-                item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
-                item.setData(0, Qt.ItemDataRole.UserRole, entity)
-                self._set_item_color_by_source(item, entity)
+            
+            item.setText(0, entity.name)
+            item.setText(1, entity.id)
+            item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
+            item.setData(0, Qt.ItemDataRole.UserRole, entity)
+            self._set_item_theme_color(item)
         
-        # Remove empty groups
         if no_map_group.childCount() == 0:
             index = self.entity_tree.indexOfTopLevelItem(no_map_group)
             self.entity_tree.takeTopLevelItem(index)
 
     def _populate_tree_by_source(self, filter_text=""):
-        """Populate tree grouped by source file - ENHANCED for worldsectors"""
-        # Create source groups
         source_groups = {}
         
-        # Default group for entities without a source
         unknown_group = QTreeWidgetItem()
         unknown_group.setText(0, "Unknown Source")
         unknown_group.setBackground(0, QColor(200, 200, 200, 100))
         self.entity_tree.addTopLevelItem(unknown_group)
         
-        # Source colors for reference
-        source_colors = {
-            "mapsdata": QColor(0, 180, 0),
-            "managers": QColor(180, 0, 180),
-            "omnis": QColor(255, 140, 0),
-            "sectorsdep": QColor(0, 120, 255),
-            "worldsectors": QColor(255, 100, 100),  # Red for worldsectors
-            "preload": QColor(100, 255, 100),
-            "particles": QColor(255, 255, 100),
-            "unknown": QColor(100, 100, 100)
-        }
-        
-        # Sort entities by source
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-                
-            source = getattr(entity, 'source_file', None)
+            
+            source = getattr(entity, 'source_file', 'unknown')
             if not source:
                 source = "unknown"
-                
-            # Create source group if not exists
+            
             if source not in source_groups:
                 source_group = QTreeWidgetItem()
                 source_group.setText(0, source)
-                
-                # Set background color to match entity color
-                if source in source_colors:
-                    color = source_colors[source]
-                    # Make a more transparent version for the background
-                    bg_color = QColor(color.red(), color.green(), color.blue(), 50)
-                    source_group.setBackground(0, bg_color)
-                
+                source_group.setBackground(0, QColor(220, 220, 220, 100))
                 self.entity_tree.addTopLevelItem(source_group)
                 source_groups[source] = source_group
             
-            # Add entity to source group
             item = QTreeWidgetItem(source_groups[source])
             item.setText(0, entity.name)
             item.setText(1, entity.id)
             item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
             item.setData(0, Qt.ItemDataRole.UserRole, entity)
-            self._set_item_color_by_source(item, entity)
+            self._set_item_theme_color(item)
 
     def _update_tree_selection(self):
-        """Update tree selection to match canvas selection - ENHANCED WITH COLOR UPDATES"""
+        """Update tree selection to match canvas, without overriding theme colors"""
         if not hasattr(self, 'entity_tree'):
             return
-            
-        # Block signals to prevent feedback loop
-        self.entity_tree.blockSignals(True)
         
+        self.entity_tree.blockSignals(True)
         try:
-            # Get selected entities from canvas
-            selected_entities = []
-            if hasattr(self.canvas, 'selected'):
-                selected_entities = self.canvas.selected
-            elif self.selected_entity:
-                selected_entities = [self.selected_entity]
-            
-            # Clear current selection
+            selected_entities = getattr(self.canvas, 'selected', [])
             self.entity_tree.clearSelection()
-            
-            # Update ALL items to refresh their colors (removes old selection highlighting)
             self._refresh_all_item_colors()
             
-            # No selection to update
-            if not selected_entities:
-                return
-            
-            # Find and select matching items
             for i in range(self.entity_tree.topLevelItemCount()):
                 top_item = self.entity_tree.topLevelItem(i)
-                
-                # Check if this is a group
-                if top_item.data(0, Qt.ItemDataRole.UserRole) is None:
-                    # Group item - check children
+                if top_item.childCount() > 0:
                     for j in range(top_item.childCount()):
                         child = top_item.child(j)
                         entity = child.data(0, Qt.ItemDataRole.UserRole)
                         if entity in selected_entities:
                             child.setSelected(True)
-                            # Update color for selected entity
-                            self._set_item_color_by_source(child, entity)
                 else:
-                    # Direct entity - check it
                     entity = top_item.data(0, Qt.ItemDataRole.UserRole)
                     if entity in selected_entities:
                         top_item.setSelected(True)
-                        # Update color for selected entity
-                        self._set_item_color_by_source(top_item, entity)
-            
-            print(f"Updated tree selection colors for {len(selected_entities)} entities")
-            
         finally:
-            # Unblock signals
             self.entity_tree.blockSignals(False)
 
     def _refresh_all_item_colors(self):
-        """Refresh colors for all items in the tree to remove old selection highlighting"""
-        try:
-            for i in range(self.entity_tree.topLevelItemCount()):
-                top_item = self.entity_tree.topLevelItem(i)
-                
-                # Check if this is a group
-                if top_item.data(0, Qt.ItemDataRole.UserRole) is None:
-                    # Group item - refresh children
-                    for j in range(top_item.childCount()):
-                        child = top_item.child(j)
-                        entity = child.data(0, Qt.ItemDataRole.UserRole)
-                        if entity:
-                            self._set_item_color_by_source(child, entity)
-                else:
-                    # Direct entity - refresh it
-                    entity = top_item.data(0, Qt.ItemDataRole.UserRole)
-                    if entity:
-                        self._set_item_color_by_source(top_item, entity)
-                        
-        except Exception as e:
-            print(f"Error refreshing item colors: {e}")
+        """Refresh all tree items to theme colors only"""
+        for i in range(self.entity_tree.topLevelItemCount()):
+            top_item = self.entity_tree.topLevelItem(i)
+            
+            # If it's a group with children
+            if top_item.childCount() > 0:
+                for j in range(top_item.childCount()):
+                    child = top_item.child(j)
+                    self._set_item_theme_color(child)
+            else:
+                self._set_item_theme_color(top_item)
+
+        # Force repaint so colors update immediately
+        self.entity_tree.viewport().update()
 
     def on_entity_selected(self, entity):
         """Handle when an entity is selected on the canvas - ENHANCED WITH COLOR UPDATES"""
@@ -6119,7 +6073,7 @@ class SimplifiedMapEditor(QMainWindow):
         
         # Update gizmo when entity is selected from canvas
         if hasattr(self.canvas, 'gizmo_renderer') and entity:
-            print(f"ðŸŽ¯ Canvas selection: Updating gizmo for {entity.name}")
+            print(f"Canvas selection: Updating gizmo for {entity.name}")
             self.canvas.gizmo_renderer.update_gizmo_for_entity(entity)
         elif hasattr(self.canvas, 'gizmo_renderer'):
             # Hide gizmo if no entity selected
@@ -6947,104 +6901,124 @@ class SimplifiedMapEditor(QMainWindow):
         return found_files
 
     def open_entity_editor(self):
-        """Open or show the entity editor window - FIXED IMPORT"""
-        
-        # Try multiple import methods
-        EntityEditorWindow = None
-        
-        # Method 1: Try direct import
-        try:
-            from entity_editor import EntityEditorWindow
-            print("Successfully imported EntityEditorWindow from entity_editor.py")
-        except ImportError as e1:
-            print(f"Failed direct import: {e1}")
+            """Open or show the entity editor window - FIXED IMPORT"""
             
-            # Method 2: Try importing from current directory
+            # Try multiple import methods
+            EntityEditorWindow = None
+            
+            # Method 1: Try direct import
             try:
-                import sys
-                import os
-                current_dir = os.path.dirname(__file__)
-                if current_dir not in sys.path:
-                    sys.path.insert(0, current_dir)
                 from entity_editor import EntityEditorWindow
-                print("Successfully imported EntityEditorWindow from current directory")
-            except ImportError as e2:
-                print(f"Failed current directory import: {e2}")
+                print("Successfully imported EntityEditorWindow from entity_editor.py")
+            except ImportError as e1:
+                print(f"Failed direct import: {e1}")
                 
-                # Method 3: Try to find the file and give helpful error
+                # Method 2: Try importing from current directory
                 try:
+                    import sys
                     import os
-                    current_dir = os.path.dirname(__file__) if hasattr(self, '__file__') else os.getcwd()
-                    entity_editor_path = os.path.join(current_dir, "entity_editor.py")
+                    current_dir = os.path.dirname(__file__)
+                    if current_dir not in sys.path:
+                        sys.path.insert(0, current_dir)
+                    from entity_editor import EntityEditorWindow
+                    print("Successfully imported EntityEditorWindow from current directory")
+                except ImportError as e2:
+                    print(f"Failed current directory import: {e2}")
                     
-                    if os.path.exists(entity_editor_path):
-                        error_msg = f"Entity editor file exists at {entity_editor_path} but import failed.\nError: {e2}"
-                    else:
-                        # Look for the file in nearby directories
-                        found_files = []
-                        for root, dirs, files in os.walk(current_dir):
-                            if "entity_editor.py" in files:
-                                found_files.append(os.path.join(root, "entity_editor.py"))
+                    # Method 3: Try to find the file and give helpful error
+                    try:
+                        import os
+                        current_dir = os.path.dirname(__file__) if hasattr(self, '__file__') else os.getcwd()
+                        entity_editor_path = os.path.join(current_dir, "entity_editor.py")
                         
-                        if found_files:
-                            error_msg = f"Entity editor file found at:\n" + "\n".join(found_files[:3])
-                            error_msg += f"\n\nMove one of these files to: {current_dir}"
+                        if os.path.exists(entity_editor_path):
+                            error_msg = f"Entity editor file exists at {entity_editor_path} but import failed.\nError: {e2}"
                         else:
-                            error_msg = f"Entity editor file not found!\n\nCurrent directory: {current_dir}\nExpected file: {entity_editor_path}\n\nPlease create entity_editor.py in the same directory as your main application."
+                            # Look for the file in nearby directories
+                            found_files = []
+                            for root, dirs, files in os.walk(current_dir):
+                                if "entity_editor.py" in files:
+                                    found_files.append(os.path.join(root, "entity_editor.py"))
+                            
+                            if found_files:
+                                error_msg = f"Entity editor file found at:\n" + "\n".join(found_files[:3])
+                                error_msg += f"\n\nMove one of these files to: {current_dir}"
+                            else:
+                                error_msg = f"Entity editor file not found!\n\nCurrent directory: {current_dir}\nExpected file: {entity_editor_path}\n\nPlease create entity_editor.py in the same directory as your main application."
+                        
+                        from PyQt6.QtWidgets import QMessageBox
+                        QMessageBox.critical(self, "Entity Editor Import Error", error_msg)
+                        return
+                        
+                    except Exception as e3:
+                        from PyQt6.QtWidgets import QMessageBox
+                        QMessageBox.critical(self, "Entity Editor Error", 
+                                        f"Could not import Entity Editor:\n{e1}\n\nAlso failed to diagnose the problem:\n{e3}")
+                        return
+            
+            # If we get here, import was successful
+            if EntityEditorWindow is None:
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.critical(self, "Error", "EntityEditorWindow class not found after import!")
+                return
+            
+            # Create editor if it doesn't exist
+            if not hasattr(self, 'entity_editor') or self.entity_editor is None:
+                try:
+                    print("=== Creating new Entity Editor window ===")
+                    self.entity_editor = EntityEditorWindow(self, self.canvas)
+                    print("Successfully created EntityEditorWindow instance")
                     
+                    # Set current entity if one is selected
+                    if hasattr(self.canvas, 'selected') and self.canvas.selected:
+                        entity = self.canvas.selected[0]
+                        print(f"📝 Entity Editor: Opening with entity '{entity.name}' (ID: {entity.id})")
+                        self.entity_editor.set_entity(entity)
+                    elif hasattr(self.canvas, 'selected_entity') and self.canvas.selected_entity:
+                        entity = self.canvas.selected_entity
+                        print(f"📝 Entity Editor: Opening with entity '{entity.name}' (ID: {entity.id})")
+                        self.entity_editor.set_entity(entity)
+                    else:
+                        print("⚠️ Entity Editor: No entity currently selected")
+                        
+                except Exception as e:
                     from PyQt6.QtWidgets import QMessageBox
-                    QMessageBox.critical(self, "Entity Editor Import Error", error_msg)
+                    import traceback
+                    error_details = traceback.format_exc()
+                    QMessageBox.critical(self, "Entity Editor Creation Error", 
+                                    f"Failed to create Entity Editor:\n{str(e)}\n\nDetails:\n{error_details}")
+                    print(f"Entity Editor creation failed: {e}")
+                    print(f"Full traceback:\n{error_details}")
                     return
-                    
-                except Exception as e3:
-                    from PyQt6.QtWidgets import QMessageBox
-                    QMessageBox.critical(self, "Entity Editor Error", 
-                                    f"Could not import Entity Editor:\n{e1}\n\nAlso failed to diagnose the problem:\n{e3}")
-                    return
-        
-        # If we get here, import was successful
-        if EntityEditorWindow is None:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", "EntityEditorWindow class not found after import!")
-            return
-        
-        # Create editor if it doesn't exist
-        if not hasattr(self, 'entity_editor') or self.entity_editor is None:
-            try:
-                self.entity_editor = EntityEditorWindow(self, self.canvas)
-                print("Successfully created EntityEditorWindow instance")
-                
-                # Set current entity if one is selected
+            else:
+                # Editor already exists, just update the entity
+                print("=== Entity Editor window already exists ===")
                 if hasattr(self.canvas, 'selected') and self.canvas.selected:
-                    self.entity_editor.set_entity(self.canvas.selected[0])
-                    print(f"Set entity editor to selected entity: {self.canvas.selected[0].name}")
+                    entity = self.canvas.selected[0]
+                    print(f"📝 Entity Editor: Updating to entity '{entity.name}' (ID: {entity.id})")
+                    self.entity_editor.set_entity(entity)
                 elif hasattr(self.canvas, 'selected_entity') and self.canvas.selected_entity:
-                    self.entity_editor.set_entity(self.canvas.selected_entity)
-                    print(f"Set entity editor to selected entity: {self.canvas.selected_entity.name}")
+                    entity = self.canvas.selected_entity
+                    print(f"📝 Entity Editor: Updating to entity '{entity.name}' (ID: {entity.id})")
+                    self.entity_editor.set_entity(entity)
                 else:
-                    print("No entity currently selected")
-                    
+                    print("⚠️ Entity Editor: No entity currently selected to update")
+            
+            # Show and raise the window
+            try:
+                self.entity_editor.show()
+                self.entity_editor.raise_()
+                self.entity_editor.activateWindow()
+                if hasattr(self, 'current_entity') or (hasattr(self.canvas, 'selected') and self.canvas.selected):
+                    entity_name = self.canvas.selected[0].name if (hasattr(self.canvas, 'selected') and self.canvas.selected) else "Unknown"
+                    print(f"✅ Entity Editor window opened successfully with '{entity_name}'")
+                else:
+                    print("✅ Entity Editor window opened successfully (no entity loaded)")
             except Exception as e:
                 from PyQt6.QtWidgets import QMessageBox
-                import traceback
-                error_details = traceback.format_exc()
-                QMessageBox.critical(self, "Entity Editor Creation Error", 
-                                f"Failed to create Entity Editor:\n{str(e)}\n\nDetails:\n{error_details}")
-                print(f"Entity Editor creation failed: {e}")
-                print(f"Full traceback:\n{error_details}")
-                return
-        
-        # Show and raise the window
-        try:
-            self.entity_editor.show()
-            self.entity_editor.raise_()
-            self.entity_editor.activateWindow()
-            print("Entity Editor window opened successfully")
-        except Exception as e:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to show Entity Editor window:\n{str(e)}")
-            print(f"Failed to show Entity Editor: {e}")
-                        
+                QMessageBox.critical(self, "Error", f"Failed to show Entity Editor window:\n{str(e)}")
+                print(f"Failed to show Entity Editor: {e}")
+
     def toggle_grid(self):
         """Toggle grid visibility"""
         self.canvas.show_grid = not self.canvas.show_grid
@@ -7060,6 +7034,362 @@ class SimplifiedMapEditor(QMainWindow):
         
         visibility = "visible" if self.canvas.show_entities else "hidden"
         self.status_bar.showMessage(f"Entities visibility: {visibility}")
+    
+    def toggle_theme(self):
+        """Toggle between light and dark theme"""
+        self.force_dark_theme = not self.force_dark_theme
+        self.apply_theme()
+        
+        # Update button text
+        if self.force_dark_theme:
+            self.theme_toggle_action.setText("Light Mode")
+            self.status_bar.showMessage("Dark theme enabled")
+        else:
+            self.theme_toggle_action.setText("Dark Mode")
+            self.status_bar.showMessage("Light theme enabled")
+        
+        # Force the entity tree to update colors immediately
+        if hasattr(self, 'entity_tree'):
+            self.force_refresh_entity_tree_colors()
+    
+    def toggle_invert_mouse(self):
+        """Toggle mouse pan inversion"""
+        self.invert_mouse_pan = not self.invert_mouse_pan
+        if hasattr(self.canvas, 'invert_mouse_pan'):
+            self.canvas.invert_mouse_pan = self.invert_mouse_pan
+        status = "enabled" if self.invert_mouse_pan else "disabled"
+        self.status_bar.showMessage(f"Inverted mouse pan {status}")
+    
+    def apply_theme(self):
+        """Apply the selected theme to the application"""
+        if self.force_dark_theme:
+            # Dark theme stylesheet
+            dark_style = """
+                QWidget {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QGroupBox {
+                    background-color: #353535;
+                    border: 1px solid #555555;
+                    border-radius: 5px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                    color: #ffffff;
+                }
+                QGroupBox::title {
+                    color: #ffffff;
+                    subcontrol-origin: margin;
+                    subcontrol-position: top left;
+                    padding: 2px 5px;
+                }
+                QPushButton {
+                    background-color: #404040;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #4a4a4a;
+                }
+                QPushButton:pressed {
+                    background-color: #353535;
+                }
+                QPushButton:checked {
+                    background-color: #0078d7;       /* Same blue as light mode */
+                    border: 1px solid #005a9e;
+                    color: #ffffff;
+                }
+                QPushButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QLabel {
+                    color: #ffffff;
+                    background-color: transparent;
+                }
+                QLineEdit {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 3px;
+                    padding: 2px;
+                }
+                QComboBox {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 3px;
+                    padding: 2px;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                    border-left: 5px solid transparent;
+                    border-right: 5px solid transparent;
+                    border-top: 5px solid #ffffff;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #353535;
+                    color: #ffffff;
+                    selection-background-color: #404040;
+                }
+                QTreeWidget {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QTreeWidget::item:selected {
+                    background-color: #404040;
+                    color: #ffffff;
+                }
+                QTextEdit {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QScrollBar:vertical {
+                    background-color: #2b2b2b;
+                    width: 12px;
+                }
+                QScrollBar::handle:vertical {
+                    background-color: #555555;
+                    border-radius: 6px;
+                }
+                QScrollBar:horizontal {
+                    background-color: #2b2b2b;
+                    height: 12px;
+                }
+                QScrollBar::handle:horizontal {
+                    background-color: #555555;
+                    border-radius: 6px;
+                }
+                QMenuBar {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QMenuBar::item:selected {
+                    background-color: #404040;
+                }
+                QMenu {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QMenu::item:selected {
+                    background-color: #404040;
+                }
+                QStatusBar {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QDockWidget {
+                    color: #ffffff;
+                }
+                QDockWidget::title {
+                    background-color: #353535;
+                    color: #ffffff;
+                    padding: 4px;
+                }
+                QToolBar {
+                    background-color: #2b2b2b;
+                    border: 1px solid #555555;
+                }
+                QToolBar QToolButton {
+                    color: #ffffff;
+                    background-color: transparent;
+                }
+                QToolBar QToolButton:hover {
+                    background-color: #404040;
+                }
+                QToolBar QToolButton:checked {
+                    background-color: #0078d7;       /* Match light mode */
+                    border: 1px solid #005a9e;
+                    color: #ffffff;
+                }
+                QToolBar QToolButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QToolBar::separator {
+                    background-color: #555555;
+                    width: 1px;
+                }
+                QHeaderView::section {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QTabWidget::pane {
+                    border: 1px solid #555555;
+                    background-color: #2b2b2b;
+                }
+                QTabBar::tab {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    padding: 5px;
+                }
+                QTabBar::tab:selected {
+                    background-color: #404040;
+                }
+            """
+            self.setStyleSheet(dark_style)
+        else:
+            # Light theme stylesheet
+            light_style = """
+                QWidget {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QGroupBox {
+                    background-color: #ffffff;
+                    border: 1px solid #c0c0c0;
+                    border-radius: 5px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                    color: #000000;
+                }
+                QGroupBox::title {
+                    color: #000000;
+                    subcontrol-origin: margin;
+                    subcontrol-position: top left;
+                    padding: 2px 5px;
+                }
+                QPushButton {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #d0d0d0;
+                }
+                QPushButton:pressed {
+                    background-color: #c0c0c0;
+                }
+                QPushButton:checked {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                    border: 1px solid #005a9e;
+                }
+                QPushButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QLabel {
+                    color: #000000;
+                    background-color: transparent;
+                }
+                QLineEdit {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QComboBox {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                    border-left: 5px solid transparent;
+                    border-right: 5px solid transparent;
+                    border-top: 5px solid #000000;
+                }
+                QTreeWidget {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QTreeWidget::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+                QTextEdit {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QMenuBar {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QMenuBar::item:selected {
+                    background-color: #e0e0e0;
+                }
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+                QStatusBar {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QDockWidget {
+                    color: #000000;
+                }
+                QDockWidget::title {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    padding: 4px;
+                }
+                QToolBar {
+                    background-color: #f0f0f0;
+                    border: 1px solid #c0c0c0;
+                }
+                QToolBar QToolButton {
+                    color: #000000;
+                    background-color: transparent;
+                }
+                QToolBar QToolButton:hover {
+                    background-color: #e0e0e0;
+                }
+                QToolBar QToolButton:checked {
+                    background-color: #0078d7;
+                    border: 1px solid #005a9e;
+                    color: #ffffff;
+                }
+                QToolBar QToolButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QHeaderView::section {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QTabWidget::pane {
+                    border: 1px solid #b0b0b0;
+                    background-color: #ffffff;
+                }
+                QTabBar::tab {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                    padding: 5px;
+                }
+                QTabBar::tab:selected {
+                    background-color: #ffffff;
+                }
+            """
+            self.setStyleSheet(light_style)
+
+        # 🔄 Update entity color legend text colors dynamically
+        if hasattr(self, "entity_colors_header"):
+            if self.force_dark_theme:
+                self.entity_colors_header.setStyleSheet("color: white; margin-bottom: 8px; padding: 2px;")
+                for label in getattr(self, "color_legend_labels", []):
+                    label.setStyleSheet("color: white;")
+            else:
+                self.entity_colors_header.setStyleSheet("color: black; margin-bottom: 8px; padding: 2px;")
+                for label in getattr(self, "color_legend_labels", []):
+                    label.setStyleSheet("color: black;")
     
     def force_canvas_update(self):
         """Force the canvas to update and redraw entities"""
