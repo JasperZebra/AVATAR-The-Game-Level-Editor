@@ -119,7 +119,7 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"Warning: Could not setup sector boundaries: {e}")
 
         # Set window title
-        self.setWindowTitle("AVATAR: The Game Level Editor | Version 1.1 | Made By: Jasper Zebra")
+        self.setWindowTitle("AVATAR: The Game Level Editor | Version 1.3 | Made By: Jasper Zebra")
 
         # Connect entity selection signal from canvas to handler - PROTECTED
         try:
