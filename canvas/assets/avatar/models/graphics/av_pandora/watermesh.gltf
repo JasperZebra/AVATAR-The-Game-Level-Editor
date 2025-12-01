@@ -1,0 +1,204 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        3
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "WaterMesh",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "WaterMesh_LOD0"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        2
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\CDROUIN_PLANTE-M-125200745895656.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "default_texture",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFUlEQVR4nGP8////fwYkwITMIU4AAAZdBATO5G0jAAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 2,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1110,
+      "type": "VEC3",
+      "min": [
+        -0.7071138639003038,
+        -0.7071138639003038,
+        0.5773491617292166
+      ],
+      "max": [
+        0.7070528268814087,
+        0.7070528268814087,
+        0.9999694805592299
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 1110,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 1110,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 1110,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 6144,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 128
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 128,
+      "byteLength": 13320,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 13448,
+      "byteLength": 8880,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 22328,
+      "byteLength": 8880,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 31208,
+      "byteLength": 17760,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 48968,
+      "byteLength": 12288,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 61256,
+      "uri": "watermesh.bin"
+    }
+  ]
+}

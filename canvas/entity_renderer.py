@@ -3,8 +3,9 @@
 import math
 from time import time
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont, QVector3D, QPolygon
+from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont, QVector3D, QPolygon, QPixmap
 from .opengl_utils import OpenGLUtils
+import os
 
 class EntityRenderer:
     """Handles rendering of entities in 2D mode - 2D ONLY"""
@@ -147,6 +148,101 @@ class EntityRenderer:
             "Rock": ["rock", "stone", "boulder"],
             "Water": ["water", "river", "lake", "ocean"],
         }
+        
+        # Vehicle icon mapping - maps icon keys to PNG filenames
+        self.HIDNAME_TO_ICON = {
+            "vehicle.air.paraglider": "paraglider.png",
+            "vehicle.avatar.ampsuit": "ampsuit.png",
+            "vehicle.avatar.atv": "atv.png",
+            "vehicle.avatar.banshee": "banshee.png",
+            "vehicle.avatar.boat_drivable": "boat.png",
+            "vehicle.avatar.buggy_drivable": "buggy.png",
+            "vehicle.avatar.bulldozer": "bulldozer.png",
+            "vehicle.avatar.dove_drivable": "dove.png",
+            "vehicle.avatar.dragon": "dragon.png",
+            "vehicle.avatar.leonopteryx": "leonopteryx.png",
+            "vehicle.avatar.samson_pilotable": "samson.png",
+            "vehicle.avatar.scorpion_pilotable": "scorpion.png",
+            "vehicle.avatar.valkyrie": "valkyrie.png",
+            "vehicle.avatar.wheelloader_drivable": "wheelloader.png",
+            "vehicle.corp_lights.buggy_light": "buggy_light.png",
+            "vehicle.corp_lights.dove_light": "dove_light.png",
+            "vehicle.corp_lights.dragon_light": "dragon_light.png",
+            "vehicle.land.bigtruck": "bigtruck.png",
+            "vehicle.land.buggy": "buggy.png",
+            "vehicle.land.datsun": "datsun.png",
+            "vehicle.land.jeepliberty": "jeepliberty.png",
+            "vehicle.land.jeepwrangler": "jeepwrangler.png",
+            "vehicle.land.rover": "rover.png",
+            "vehicle.sea.fishingboat": "fishingboat.png",
+            "vehicle.sea.gunboat": "gunboat.png",
+            "vehicle.sea.hydroboat": "hydroboat.png",
+            "vehicle.sea.pirogue": "pirogue.png",
+            "vehicle.sea.swampboat": "swampboat.png",
+            "vehicle.test.avatararmedvehicle": "test_vehicle.png",
+            "vehicle.test.avatarboat": "test_boat.png",
+            "vehicle.test.testboat": "test_boat.png",
+            "vehicle.wreck.carburned01_bk": "wreck_car.png",
+            "vehicle.wreck.carwrecked01_bk": "wreck_car.png",
+        }
+        
+        # Icon cache - stores loaded QPixmaps
+        self.icon_cache = {}
+        self.icons_directory = None
+        
+        # Icon display settings
+        self.icon_size = 32  # Default icon size in pixels
+        self.show_vehicle_icons = True
+
+        # Vehicle-specific icon sizes (in pixels)
+        self.VEHICLE_ICON_SIZES = {
+            # Large vehicles
+            "vehicle.avatar.samson_pilotable": 80,
+            "vehicle.avatar.dragon": 48,
+            "vehicle.avatar.valkyrie": 48,
+            "vehicle.avatar.leonopteryx": 56,
+            "vehicle.avatar.bulldozer": 44,
+            "vehicle.avatar.wheelloader_drivable": 44,
+            "vehicle.land.bigtruck": 44,
+            
+            # Medium vehicles
+            "vehicle.avatar.scorpion_pilotable": 40,
+            "vehicle.avatar.ampsuit": 40,
+            "vehicle.avatar.buggy_drivable": 36,
+            "vehicle.avatar.dove_drivable": 36,
+            "vehicle.avatar.atv": 34,
+            "vehicle.land.buggy": 36,
+            "vehicle.land.rover": 36,
+            "vehicle.land.jeepliberty": 36,
+            "vehicle.land.jeepwrangler": 36,
+            "vehicle.land.datsun": 34,
+            
+            # Small vehicles/creatures
+            "vehicle.avatar.banshee": 38,
+            "vehicle.avatar.boat_drivable": 36,
+            "vehicle.sea.fishingboat": 38,
+            "vehicle.sea.gunboat": 40,
+            "vehicle.sea.hydroboat": 34,
+            "vehicle.sea.pirogue": 32,
+            "vehicle.sea.swampboat": 36,
+            
+            # Very small
+            "vehicle.air.paraglider": 28,
+            
+            # Light variants
+            "vehicle.corp_lights.buggy_light": 36,
+            "vehicle.corp_lights.dove_light": 36,
+            "vehicle.corp_lights.dragon_light": 48,
+            
+            # Wrecks
+            "vehicle.wreck.carburned01_bk": 34,
+            "vehicle.wreck.carwrecked01_bk": 34,
+            
+            # Test vehicles
+            "vehicle.test.avatararmedvehicle": 40,
+            "vehicle.test.avatarboat": 36,
+            "vehicle.test.testboat": 36,
+        }
                 
         # Performance tracking
         self._last_2d_log_time = 0
@@ -161,6 +257,175 @@ class EntityRenderer:
         self._batch_size = 500
         
         print("EntityRenderer initialized - 2D ONLY")
+
+    def set_icons_directory(self, directory_path):
+        """Set the directory containing vehicle icon PNGs"""
+        if os.path.isdir(directory_path):
+            self.icons_directory = directory_path
+            print(f"Vehicle icons directory set: {directory_path}")
+            # Don't pre-load - we'll load on-demand for selected entities
+            print("Icons will be loaded on-demand when entities are selected")
+        else:
+            print(f"Invalid icons directory: {directory_path}")
+
+    def _preload_icons(self):
+        """DEPRECATED - No longer pre-loading all icons"""
+        pass 
+
+    def get_entity_icon(self, entity):
+        """Get icon pixmap for an entity, returns None if no icon available"""
+        if not self.show_vehicle_icons:
+            print("DEBUG: show_vehicle_icons is False")
+            return None
+        
+        if not self.icons_directory:
+            print("DEBUG: icons_directory not set")
+            return None
+        
+        # DEBUG: Print entity attributes
+        entity_name = getattr(entity, 'name', 'unknown')
+        print(f"\n=== ICON DEBUG for {entity_name} ===")
+        print(f"Entity attributes: {[attr for attr in dir(entity) if not attr.startswith('_')][:20]}")
+        
+        # Try to get vehicle identifier from multiple sources
+        icon_key = None
+        
+        # Method 1: Check tplCreatureType (most reliable for vehicles)
+        tpl_creature_type = getattr(entity, 'tplCreatureType', None)
+        print(f"tplCreatureType: {tpl_creature_type}")
+        if tpl_creature_type:
+            icon_key = self._match_vehicle_pattern(tpl_creature_type)
+            print(f"Pattern matched tplCreatureType to: {icon_key}")
+        
+        # Method 2: Check hidName if no match yet
+        if not icon_key:
+            hidname = getattr(entity, 'hidName', None)
+            print(f"hidName: {hidname}")
+            if hidname:
+                icon_key = self._match_vehicle_pattern(hidname)
+                print(f"Pattern matched hidName to: {icon_key}")
+        
+        # Method 3: Check name attribute
+        if not icon_key:
+            name = getattr(entity, 'name', None)
+            print(f"name: {name}")
+            if name:
+                icon_key = self._match_vehicle_pattern(name)
+                print(f"Pattern matched name to: {icon_key}")
+        
+        # If we found a key, check cache or load it
+        if icon_key:
+            print(f"Final icon_key: {icon_key}")
+            
+            # Check if already in cache
+            if icon_key in self.icon_cache:
+                print(f"✓ Found in cache")
+                return self.icon_cache[icon_key]
+            
+            # Not in cache - load it now
+            if icon_key in self.HIDNAME_TO_ICON:
+                filename = self.HIDNAME_TO_ICON[icon_key]
+                icon_path = os.path.join(self.icons_directory, filename)
+                print(f"Attempting to load: {icon_path}")
+                
+                if os.path.exists(icon_path):
+                    pixmap = QPixmap(icon_path)
+                    if not pixmap.isNull():
+                        # Cache it for next time
+                        self.icon_cache[icon_key] = pixmap
+                        print(f"✓ Loaded icon: {filename}")
+                        return pixmap
+                    else:
+                        print(f"✗ Failed to load icon (null pixmap): {icon_path}")
+                else:
+                    print(f"✗ Icon file not found: {icon_path}")
+            else:
+                print(f"✗ icon_key '{icon_key}' not in HIDNAME_TO_ICON mapping")
+        else:
+            print(f"✗ No icon_key found for this entity")
+        
+        print("=== END ICON DEBUG ===\n")
+        return None
+
+    def _match_vehicle_pattern(self, vehicle_string):
+        """Match vehicle string to vehicle icon key by pattern matching"""
+        if not vehicle_string:
+            return None
+        
+        vehicle_lower = vehicle_string.lower()
+        
+        # Direct exact match (case-insensitive)
+        if vehicle_lower in self.HIDNAME_TO_ICON:
+            return vehicle_lower
+        
+        # Remove common suffixes and try again
+        clean_string = vehicle_lower
+        for suffix in ['.scripted', '.static', '.drivable', '.pilotable', '_drivable', '_pilotable', 
+                       '.multi', '.controlled', '.npcversion', '.rogue', '.fortnavarone']:
+            clean_string = clean_string.replace(suffix, '')
+        
+        if clean_string in self.HIDNAME_TO_ICON:
+            return clean_string
+        
+        # Pattern matching for specific vehicles
+        vehicle_patterns = {
+            # Avatar vehicles
+            'samson': 'vehicle.avatar.samson_pilotable',
+            'scorpion': 'vehicle.avatar.scorpion_pilotable',
+            'valkyrie': 'vehicle.avatar.valkyrie',
+            'dragon': 'vehicle.avatar.dragon',
+            'ampsuit': 'vehicle.avatar.ampsuit',
+            'banshee': 'vehicle.avatar.banshee',
+            'leonopteryx': 'vehicle.avatar.leonopteryx',
+            'dove': 'vehicle.avatar.dove_drivable',
+            'atv': 'vehicle.avatar.atv',
+            'bulldozer': 'vehicle.avatar.bulldozer',
+            'wheelloader': 'vehicle.avatar.wheelloader_drivable',
+            
+            # Far Cry 2 vehicles
+            'paraglider': 'vehicle.air.paraglider',
+            'bigtruck': 'vehicle.land.bigtruck',
+            'datsun': 'vehicle.land.datsun',
+            'jeepliberty': 'vehicle.land.jeepliberty',
+            'jeepwrangler': 'vehicle.land.jeepwrangler',
+            'rover': 'vehicle.land.rover',
+            'fishingboat': 'vehicle.sea.fishingboat',
+            'gunboat': 'vehicle.sea.gunboat',
+            'hydroboat': 'vehicle.sea.hydroboat',
+            'pirogue': 'vehicle.sea.pirogue',
+            'swampboat': 'vehicle.sea.swampboat',
+        }
+        
+        # Check for vehicle patterns in the string
+        for pattern, icon_key in vehicle_patterns.items():
+            if pattern in vehicle_lower:
+                # Special handling for buggy vs buggy_light
+                if pattern == 'buggy':
+                    if 'light' in vehicle_lower:
+                        return 'vehicle.corp_lights.buggy_light'
+                    # Check if it's avatar buggy or fc2 buggy
+                    if 'avatar' in vehicle_lower or 'corp' in vehicle_lower:
+                        return 'vehicle.avatar.buggy_drivable'
+                    else:
+                        return 'vehicle.land.buggy'
+                
+                # Special handling for boat variants
+                if pattern == 'boat' and 'avatar.boat' in vehicle_lower:
+                    return 'vehicle.avatar.boat_drivable'
+                
+                return icon_key
+        
+        # Special cases for light variants
+        if 'dove' in vehicle_lower and 'light' in vehicle_lower:
+            return 'vehicle.corp_lights.dove_light'
+        if 'dragon' in vehicle_lower and 'light' in vehicle_lower:
+            return 'vehicle.corp_lights.dragon_light'
+        
+        # Check for wrecks
+        if 'wreck' in vehicle_lower or 'burned' in vehicle_lower:
+            return 'vehicle.wreck.carburned01_bk'
+        
+        return None
 
     def determine_entity_type(self, entity):
         """Enhanced entity type determination - CACHED"""
@@ -304,7 +569,7 @@ class EntityRenderer:
         return entity_data
 
     def render_entities_2d(self, painter, canvas, entities):
-        """2D rendering with circles and batch processing"""
+        """2D rendering with squares and batch processing, including fences with rotation"""
         if not entities:
             return
         
@@ -318,8 +583,9 @@ class EntityRenderer:
             print(f"Rendering {len(entities)} entities in 2D mode (OPTIMIZED)")
             self._last_2d_log_time = current_time
         
-        # Disable antialiasing for performance
+        # Enable antialiasing for smooth lines and pixmaps
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
         
         # Check for highlighting
         has_highlighted = hasattr(canvas, 'icon_renderer') and hasattr(canvas.icon_renderer, 'highlighted_entities_list') and canvas.icon_renderer.highlighted_entities_list
@@ -335,16 +601,22 @@ class EntityRenderer:
         
         entities_drawn = 0
         entities_culled = 0
+        icons_drawn = 0
         selected_entities = getattr(canvas, 'selected', [])
         
-        # Process entities in batches
+        # CONSTANT SCREEN SIZES (pixels)
+        ICON_SIZE_PIXELS = 32  # Icon size in pixels
+        SQUARE_SIZE_PIXELS = 10  # Square size in pixels
+        SELECTED_SQUARE_SIZE_PIXELS = 12  # Larger for selected
+        
         batch_size = self._batch_size
         
         for batch_start in range(0, len(entities), batch_size):
             batch_end = min(batch_start + batch_size, len(entities))
             batch_entities = entities[batch_start:batch_end]
             
-            circles_to_draw = []
+            squares_to_draw = []
+            icons_to_draw = []
             
             for entity in batch_entities:
                 try:
@@ -372,36 +644,72 @@ class EntityRenderer:
                                 is_highlighted = True
                                 break
                     
-                    # Determine circle properties
+                    # Get rotation for the icon (read from XML like gizmo does)
+                    rotation = 0.0
+                    if hasattr(entity, 'xml_element') and entity.xml_element is not None:
+                        angles_field = entity.xml_element.find("./field[@name='hidAngles']")
+                        if angles_field is not None:
+                            angles_value = angles_field.get('value-Vector3')
+                            if angles_value:
+                                try:
+                                    parts = angles_value.split(',')
+                                    if len(parts) >= 3:
+                                        game_rotation = float(parts[2].strip())
+                                        rotation = (360 - game_rotation) % 360
+                                except (ValueError, IndexError):
+                                    pass
+                    
+                    # Check if entity has an icon (only for SELECTED entities)
+                    icon_pixmap = None
+                    if is_selected:
+                        icon_pixmap = self.get_entity_icon(entity)
+                    
+                    # Determine square properties - FIXED SIZE IN PIXELS
                     if is_highlighted and highlight_flash_state:
                         color = QColor(255, 255, 255)
-                        size = 10
+                        size = SELECTED_SQUARE_SIZE_PIXELS
                         outline_width = 3
                     elif is_selected:
                         color = entity_data['selected_color']
-                        size = 10
+                        size = SELECTED_SQUARE_SIZE_PIXELS
                         outline_width = 2
                     else:
                         color = entity_data['normal_color']
-                        size = 10
+                        size = SQUARE_SIZE_PIXELS
                         outline_width = 1
                     
-                    final_size = int(round(size * entity_data['size_multiplier']))
-                    final_size = max(3, final_size)
-                    
-                    if entity_data['is_fence']:
-                        self.draw_fence_indicator_optimized(painter, entity, x, y, canvas)
-                    else:
-                        circles_to_draw.append({
+                    # Add icon for rendering if available (only for selected)
+                    if icon_pixmap:
+                        # Get vehicle-specific size or use default - FIXED SIZE IN PIXELS
+                        icon_key = self._match_vehicle_pattern(entity.name)
+                        vehicle_size = self.VEHICLE_ICON_SIZES.get(icon_key, ICON_SIZE_PIXELS)
+                        
+                        icons_to_draw.append({
                             'x': x,
                             'y': y,
-                            'size': final_size,
-                            'color': color,
-                            'outline_width': outline_width,
-                            'entity': entity,
+                            'pixmap': icon_pixmap,
+                            'size': vehicle_size,  # Already in pixels
+                            'rotation': rotation,
                             'is_selected': is_selected,
                             'is_highlighted': is_highlighted and highlight_flash_state
                         })
+                        icons_drawn += 1
+
+                    # Add square for all entities (drawn on top of icon)
+                    squares_to_draw.append({
+                        'x': x,
+                        'y': y,
+                        'size': size,  # Size in pixels
+                        'color': color,
+                        'outline_width': outline_width,
+                        'entity': entity,
+                        'is_selected': is_selected,
+                        'is_highlighted': is_highlighted and highlight_flash_state
+                    })
+                    
+                    # Draw rotated fence line if entity is a fence
+                    if entity_data['is_fence']:
+                        self.draw_fence_indicator_optimized(painter, entity, x, y, canvas)
                     
                     entities_drawn += 1
                     
@@ -410,47 +718,81 @@ class EntityRenderer:
                         print(f"Error processing entity: {e}")
                     continue
             
-            # Batch render circles
-            self.draw_batch_circles(painter, circles_to_draw)
+            # Draw icons FIRST (underneath squares)
+            self.draw_batch_icons(painter, icons_to_draw)
+            
+            # Then draw squares on top
+            self.draw_batch_circles(painter, squares_to_draw)
             
             # Draw labels for selected/highlighted entities
-            for circle_data in circles_to_draw:
-                if circle_data['is_selected'] or circle_data['is_highlighted']:
+            for square_data in squares_to_draw:
+                if square_data['is_selected'] or square_data['is_highlighted']:
                     self._draw_entity_label_2d_optimized(
-                        painter, circle_data['entity'], 
-                        circle_data['x'], circle_data['y'], 
-                        circle_data['size'], circle_data['is_highlighted']
+                        painter, square_data['entity'], 
+                        square_data['x'], square_data['y'], 
+                        square_data['size'], square_data['is_highlighted']
                     )
         
         if should_log:
-            print(f"Drew {entities_drawn} entities in 2D mode (culled: {entities_culled})")
+            print(f"Drew {entities_drawn} entities ({icons_drawn} icons) in 2D mode (culled: {entities_culled})")
 
-    def draw_smooth_circle(self, painter, x, y, radius, segments=24):
-        """Draw a circle using a polygon with specified number of segments"""
-        import math
-        from PyQt6.QtGui import QPolygonF
-        from PyQt6.QtCore import QPointF
+    def draw_batch_icons(self, painter, icons_data):
+        """Draw multiple vehicle icons efficiently with rotation"""
+        if not icons_data:
+            return  # Removed debug print - this is normal when nothing is selected
         
-        points = []
-        for i in range(segments):
-            angle = 2 * math.pi * i / segments
-            px = x + radius * math.cos(angle)
-            py = y + radius * math.sin(angle)
-            points.append(QPointF(px, py))
-        
-        polygon = QPolygonF(points)
-        painter.drawPolygon(polygon)
+        for icon_info in icons_data:
+            x = icon_info['x']
+            y = icon_info['y']
+            pixmap = icon_info['pixmap']
+            size = icon_info['size']
+            rotation = icon_info.get('rotation', 0.0)
+            is_selected = icon_info['is_selected']
+            is_highlighted = icon_info['is_highlighted']
+            
+            # Save painter state
+            painter.save()
+            
+            # Move to the entity position
+            painter.translate(x, y)
+            
+            # Rotate around the center
+            painter.rotate(rotation)
+            
+            # Scale pixmap to desired size
+            scaled_pixmap = pixmap.scaled(
+                size, size,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            
+            # Calculate position (center the icon)
+            half_size = size // 2
+            draw_x = -half_size
+            draw_y = -half_size
+                        
+            # Draw the icon
+            painter.drawPixmap(draw_x, draw_y, scaled_pixmap)
+            
+            # Restore painter state
+            painter.restore()
+
+    def draw_square(self, painter, x, y, size):
+        """Draw a square centered at (x, y) with side length = size * 2"""
+        from PyQt6.QtCore import QRectF
+
+        half = size
+        rect = QRectF(x - half, y - half, size * 2, size * 2)
+        painter.drawRect(rect)
 
     def draw_batch_circles(self, painter, circles_data):
-        """Draw multiple circles efficiently with custom polygon circles"""
+        """Draw multiple SQUARES efficiently using the same batching system."""
         if not circles_data:
             return
         
-        # Group circles by similar properties to minimize state changes
         circles_by_style = {}
         
         for circle in circles_data:
-            # Create style key
             style_key = (
                 circle['color'].rgb(),
                 circle['outline_width']
@@ -461,47 +803,58 @@ class EntityRenderer:
             
             circles_by_style[style_key].append(circle)
         
-        # Draw each style group in batch
         for (color_rgb, outline_width), circle_group in circles_by_style.items():
-            # Set painter state once per group
             color = QColor()
             color.setRgb(color_rgb)
             
             painter.setPen(QPen(Qt.GlobalColor.black, outline_width))
             painter.setBrush(QBrush(color))
             
-            # Draw all circles with this style using custom polygon circles
             for circle in circle_group:
                 radius = circle['size']
-                # Use 24 segments for smooth circles (you can adjust this number)
-                self.draw_smooth_circle(painter, circle['x'], circle['y'], radius, 24)
+                self.draw_square(painter, circle['x'], circle['y'], radius)
 
     def draw_fence_indicator_optimized(self, painter, entity, screen_x, screen_y, canvas):
-        """Optimized fence drawing with simple line"""
+        """Draw fence line with static-size endpoint circles"""
         if not self.is_fence_object(entity):
             return False
-        
-        # Get cached rotation
+
+        # Get Z rotation from hidAngles
+        rotation = 0.0
+        hid_angles = getattr(entity, 'hidAngles', None)
+        if hid_angles:
+            rotation = hid_angles[2]  # Z-axis rotation
+
+        # Adjust to match game orientation
+        rotation += 90
+
+        # Cache for performance
         entity_data = self.get_or_cache_entity_data(entity)
-        rotation = entity_data.get('rotation', 0)
-        
-        # Calculate fence line (simplified)
+        entity_data['rotation'] = rotation
+
+        # Fence line calculation
         fence_width_world = 24
         half_width_screen = (fence_width_world * canvas.scale_factor) / 2
-        
-        line_angle_rad = math.radians(rotation)
-        dx = half_width_screen * math.cos(line_angle_rad)
-        dy = half_width_screen * math.sin(line_angle_rad)
-        
+        angle_rad = math.radians(rotation)
+        dx = half_width_screen * math.cos(angle_rad)
+        dy = half_width_screen * math.sin(angle_rad)
+
         start_x = int(screen_x - dx)
         start_y = int(screen_y - dy)
         end_x = int(screen_x + dx)
         end_y = int(screen_y + dy)
-        
-        # Draw simple red line (no house shape for performance)
+
+        # Draw the main fence line
         painter.setPen(QPen(QColor(255, 0, 0), 3))
         painter.drawLine(start_x, start_y, end_x, end_y)
-        
+
+        # Draw static-size endpoint circles (same size as squares)
+        painter.setBrush(QBrush(QColor(255, 0, 0)))
+        painter.setPen(QPen(Qt.GlobalColor.black, 1))
+        radius = 8  # static pixel radius
+        painter.drawEllipse(start_x - radius, start_y - radius, radius * 2, radius * 2)
+        painter.drawEllipse(end_x - radius, end_y - radius, radius * 2, radius * 2)
+
         return True
 
     def _draw_entity_label_2d_optimized(self, painter, entity, x, y, size, is_highlighted):

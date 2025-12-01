@@ -1,0 +1,258 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        3
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "G_Selfridge_Unobtanium_01",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "fridge_Unobtanium_01_Bone",
+      "translation": [
+        0.0002465799916535616,
+        -2.999999892949745e-08,
+        0.3122884929180145
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        2
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\SLABRECHE-M-2009091055049845.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "GRAPHICS\\_MATERIALS\\SLABRECHE-M-2009033155355299.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 1,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    }
+  ],
+  "images": [
+    {
+      "name": "z_grey_02",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFUlEQVR4nGNsbmz8z4AHMOGTHD4KAJqCApQ2dpDUAAAAAElFTkSuQmCC"
+    },
+    {
+      "name": "z_grey_02",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFUlEQVR4nGNsbmz8z4AHMOGTHD4KAJqCApQ2dpDUAAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 2,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 728,
+      "type": "VEC3",
+      "min": [
+        -0.1684316536411643,
+        -0.1636097291484475,
+        -0.0012512588873505592
+      ],
+      "max": [
+        0.16129032243043184,
+        0.16611224692314863,
+        0.3668324835598469
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 728,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 728,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 728,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 681,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 780,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 128
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 128,
+      "byteLength": 8736,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8864,
+      "byteLength": 5824,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 14688,
+      "byteLength": 5824,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 20512,
+      "byteLength": 11648,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 32160,
+      "byteLength": 1362,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 33522,
+      "byteLength": 1560,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 35082,
+      "uri": "hg_selfridge_unobtanium_01.bin"
+    }
+  ]
+}

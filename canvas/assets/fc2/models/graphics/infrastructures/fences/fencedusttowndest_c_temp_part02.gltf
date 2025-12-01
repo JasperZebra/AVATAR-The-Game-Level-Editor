@@ -1,0 +1,309 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        7
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "ustTownDest_C_Temp_Part02",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "PhysState12",
+      "translation": [
+        -0.7655773758888245,
+        -1.0445586442947388,
+        1.7820725440979004
+      ],
+      "children": [
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "name": "State02Phys12",
+      "translation": [
+        0.7655773758888245,
+        1.0445592403411865,
+        -1.7820725440979004
+      ],
+      "children": [
+        3
+      ]
+    },
+    {
+      "name": "MestPhys07_FX",
+      "translation": [
+        -0.010121610015630722,
+        -0.9870361089706421,
+        1.692201852798462
+      ]
+    },
+    {
+      "name": "PhysPrim31",
+      "translation": [
+        0.7775139212608337,
+        -0.25860077142715454,
+        -0.11276351660490036
+      ],
+      "rotation": [
+        0.9773825625483651,
+        0.18540916280557732,
+        -0.09876097955699671,
+        0.024352365850335202
+      ]
+    },
+    {
+      "name": "PhysPrim32",
+      "translation": [
+        0.7775139212608337,
+        0.31937330961227417,
+        -0.2142288088798523
+      ],
+      "rotation": [
+        0.0704687028031765,
+        -0.09404806975960175,
+        -0.10831823409431991,
+        0.98714552254425
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        6
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 7,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\HLEVASSEUR-M-2008060237873099.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "dualcolor02_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAHklEQVR4nGM0zDv8nwEPYMInSR0FLE5aHDS2gqACALJGAudDiIkwAAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 6,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 152,
+      "type": "VEC3",
+      "min": [
+        -0.04303109832108021,
+        -1.3613391509279609,
+        -0.8489944143220782
+      ],
+      "max": [
+        0.026734214276075363,
+        0.03515732288360596,
+        2.891323585063219
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 152,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 152,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 152,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 138,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 48,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5123,
+      "count": 48,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 384
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 384,
+      "byteLength": 1824,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2208,
+      "byteLength": 1216,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3424,
+      "byteLength": 1216,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4640,
+      "byteLength": 2432,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7072,
+      "byteLength": 276,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7348,
+      "byteLength": 96,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7444,
+      "byteLength": 96,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 7540,
+      "uri": "fencedusttowndest_c_temp_part02.bin"
+    }
+  ]
+}

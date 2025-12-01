@@ -1,0 +1,551 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        31
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "VEH_GunBoat",
+      "children": [
+        1,
+        13,
+        14,
+        16,
+        17,
+        19,
+        20,
+        24,
+        25,
+        26,
+        28
+      ]
+    },
+    {
+      "name": "BoatFrame",
+      "children": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "name": "BoatFrame_LOD0"
+    },
+    {
+      "name": "COL_BoatFrame01",
+      "translation": [
+        0.01656555011868477,
+        0.2538529932498932,
+        -0.08266541361808777
+      ]
+    },
+    {
+      "name": "COL_BoatFrame02",
+      "translation": [
+        -1.1673011779785156,
+        0.23743759095668793,
+        0.45311248302459717
+      ]
+    },
+    {
+      "name": "COL_BoatFrame03",
+      "translation": [
+        1.1608715057373047,
+        0.23743759095668793,
+        0.45311248302459717
+      ]
+    },
+    {
+      "name": "COL_BoatFrame04",
+      "translation": [
+        0.001739579951390624,
+        -1.7490062713623047,
+        0.45311248302459717
+      ]
+    },
+    {
+      "name": "COL_BoatFrame05",
+      "translation": [
+        0.001739579951390624,
+        1.6513830423355103,
+        0.45311248302459717
+      ]
+    },
+    {
+      "name": "COL_BoatFrame06",
+      "translation": [
+        0.7093687057495117,
+        -0.5318878293037415,
+        0.44769522547721863
+      ]
+    },
+    {
+      "name": "COL_BoatFrame07",
+      "translation": [
+        -0.71891188621521,
+        -0.5318878293037415,
+        0.44769522547721863
+      ]
+    },
+    {
+      "name": "COL_BoatFrame08",
+      "translation": [
+        0.02827526070177555,
+        2.914984703063965,
+        0.11649470776319504
+      ]
+    },
+    {
+      "name": "COL_BoatFrame09",
+      "translation": [
+        0.02827529050409794,
+        3.5343611240386963,
+        0.4645483195781708
+      ]
+    },
+    {
+      "name": "COL_BoatFrame10",
+      "translation": [
+        0.02827530913054943,
+        4.153737545013428,
+        0.934795081615448
+      ]
+    },
+    {
+      "name": "P_EntryPoint_0",
+      "translation": [
+        -1.6382229328155518,
+        -0.40365293622016907,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.7071067690849299,
+        0.707106793288165
+      ]
+    },
+    {
+      "name": "P_SitPoint_0",
+      "translation": [
+        -0.7613648176193237,
+        -0.298866868019104,
+        0.9685385823249817
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.7071067690849299,
+        0.707106793288165
+      ],
+      "children": [
+        15
+      ]
+    },
+    {
+      "name": "P_SitPoint_0_EYE",
+      "translation": [
+        2.999999892949745e-08,
+        -9.99999993922529e-09,
+        0.699999988079071
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        3.308722450212111e-24,
+        1.0
+      ]
+    },
+    {
+      "name": "P_EntryPoint_1",
+      "translation": [
+        1.7290143966674805,
+        -0.39790114760398865,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.7071067690849299,
+        0.707106793288165
+      ]
+    },
+    {
+      "name": "P_SitPoint_1",
+      "translation": [
+        0.768407940864563,
+        -0.2448074221611023,
+        0.9052719473838806
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.7071067690849299,
+        0.707106793288165
+      ],
+      "children": [
+        18
+      ]
+    },
+    {
+      "name": "P_SitPoint_1_EYE",
+      "translation": [
+        -2.99999989850086e-08,
+        -1.9999999989472883e-08,
+        0.699999988079071
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -3.308722450212111e-24,
+        1.0
+      ]
+    },
+    {
+      "name": "Repair",
+      "translation": [
+        0.0,
+        2.8399641513824463,
+        0.46406134963035583
+      ]
+    },
+    {
+      "name": "SteeringWheel",
+      "translation": [
+        -3.099999901223782e-07,
+        1.225119709968567,
+        1.628062129020691
+      ],
+      "children": [
+        21,
+        22,
+        23
+      ]
+    },
+    {
+      "name": "RightHand",
+      "translation": [
+        0.1745636761188507,
+        -0.1292378157377243,
+        0.019122309982776642
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.9999999999999971,
+        7.549790126404267e-08
+      ]
+    },
+    {
+      "name": "LeftHand",
+      "translation": [
+        -0.1750875860452652,
+        -0.1292378157377243,
+        0.019122309982776642
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.9999999999999971,
+        7.549790126404267e-08
+      ]
+    },
+    {
+      "name": "SteeringWheel_LOD0"
+    },
+    {
+      "name": "D_EntryPoint_2",
+      "translation": [
+        0.0,
+        0.48639997839927673,
+        0.45352011919021606
+      ]
+    },
+    {
+      "name": "W_EntryPoint_3",
+      "translation": [
+        -0.050381921231746674,
+        0.06537125259637833,
+        0.4566590487957001
+      ]
+    },
+    {
+      "name": "Turret",
+      "translation": [
+        0.0008919599931687117,
+        2.707371473312378,
+        0.448679655790329
+      ],
+      "children": [
+        27
+      ]
+    },
+    {
+      "name": "Gunner_3"
+    },
+    {
+      "name": "D_SitPoint_2",
+      "translation": [
+        0.002073169918730855,
+        0.5749437808990479,
+        1.2749779224395752
+      ],
+      "children": [
+        29
+      ]
+    },
+    {
+      "name": "D_SitPoint_2_EYE",
+      "translation": [
+        0.0,
+        0.0,
+        0.699999988079071
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        30
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "red",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8z8DwnwEPYMInOXwUAAASWwIOH0pJXQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 30,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 2981,
+      "type": "VEC3",
+      "min": [
+        -1.4540543826296926,
+        -2.132786032743752,
+        -0.19913327414542437
+      ],
+      "max": [
+        1.4539017900824547,
+        4.381237216293812,
+        1.86819055583328
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 2981,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 2981,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 2981,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 8280,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 780,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1920
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1920,
+      "byteLength": 35772,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 37692,
+      "byteLength": 23848,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 61540,
+      "byteLength": 23848,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 85388,
+      "byteLength": 47696,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 133084,
+      "byteLength": 16560,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 149644,
+      "byteLength": 1560,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 151204,
+      "uri": "veh_gunboat.bin"
+    }
+  ]
+}

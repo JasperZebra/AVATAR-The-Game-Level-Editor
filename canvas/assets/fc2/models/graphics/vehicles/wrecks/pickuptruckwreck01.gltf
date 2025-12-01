@@ -1,0 +1,484 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        13
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "PickUpTruckWreck01",
+      "children": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "name": "SCOL01",
+      "translation": [
+        1.0156768560409546,
+        0.014867560006678104,
+        -0.24964416027069092
+      ],
+      "rotation": [
+        -0.4999999552964971,
+        0.500000074505776,
+        0.5000001192092789,
+        -0.4999998062848878
+      ]
+    },
+    {
+      "name": "SCOL02",
+      "translation": [
+        0.9769442677497864,
+        -1.1522880792617798,
+        0.6591366529464722
+      ],
+      "rotation": [
+        -0.4999999552964971,
+        0.500000074505776,
+        0.5000001192092789,
+        -0.4999998062848878
+      ]
+    },
+    {
+      "name": "SCOL03",
+      "translation": [
+        0.8807011246681213,
+        -0.8742121458053589,
+        1.2179694175720215
+      ],
+      "rotation": [
+        0.39160408605022445,
+        -0.588766856636559,
+        -0.3916041245361715,
+        0.5887666281821406
+      ]
+    },
+    {
+      "name": "SCOL04",
+      "translation": [
+        0.9769446849822998,
+        1.470046043395996,
+        0.6692668199539185
+      ],
+      "rotation": [
+        -0.4999999552964971,
+        0.500000074505776,
+        0.5000001192092789,
+        -0.4999998062848878
+      ]
+    },
+    {
+      "name": "SCOL05",
+      "translation": [
+        -0.8201547265052795,
+        1.4700464010238647,
+        0.6692667007446289
+      ],
+      "rotation": [
+        -0.4999999552964971,
+        0.500000074505776,
+        0.5000001192092789,
+        -0.4999998062848878
+      ]
+    },
+    {
+      "name": "SCOL06",
+      "translation": [
+        0.8920773267745972,
+        0.11858698725700378,
+        0.5947856307029724
+      ],
+      "rotation": [
+        0.4543136375424515,
+        -0.5418477977762639,
+        -0.4543137023650485,
+        0.5418478284046991
+      ]
+    },
+    {
+      "name": "SCOL07",
+      "translation": [
+        0.8920773267745972,
+        0.2665248513221741,
+        0.692135214805603
+      ],
+      "rotation": [
+        0.49954713131256323,
+        -0.5004524662620337,
+        -0.4995472207061141,
+        0.500452384426625
+      ]
+    },
+    {
+      "name": "SCOL08",
+      "translation": [
+        0.9625648260116577,
+        -1.858054757118225,
+        0.5442914962768555
+      ],
+      "rotation": [
+        -0.4999999552964971,
+        0.500000074505776,
+        0.5000001192092789,
+        -0.4999998062848878
+      ]
+    },
+    {
+      "name": "SCOL09",
+      "translation": [
+        0.667277991771698,
+        -1.858054757118225,
+        0.7335058450698853
+      ],
+      "rotation": [
+        -0.4999999552964971,
+        0.500000074505776,
+        0.5000001192092789,
+        -0.4999998062848878
+      ]
+    },
+    {
+      "name": "SCOL10",
+      "translation": [
+        0.68979811668396,
+        -0.2624477744102478,
+        0.33723312616348267
+      ],
+      "rotation": [
+        -0.4999999552964971,
+        0.500000074505776,
+        0.5000001192092789,
+        -0.4999998062848878
+      ]
+    },
+    {
+      "name": "PickUpTruckWreck01_LOD0"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        12
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 1
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 7,
+          "material": 2
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 8,
+          "material": 3
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "red",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8z8DwnwEPYMInOXwUAAASWwIOH0pJXQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 12,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 9032,
+      "type": "VEC3",
+      "min": [
+        -1.1644947649911046,
+        -2.5960570061579347,
+        -0.02783288061618805
+      ],
+      "max": [
+        1.16568498685956,
+        2.595965450629592,
+        1.5573595371097326
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 9032,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 9032,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 9032,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 12870,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 5676,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5123,
+      "count": 5457,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5123,
+      "count": 876,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 768
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 768,
+      "byteLength": 108384,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 109152,
+      "byteLength": 72256,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 181408,
+      "byteLength": 72256,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 253664,
+      "byteLength": 144512,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 398176,
+      "byteLength": 25740,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 423916,
+      "byteLength": 11352,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 435268,
+      "byteLength": 10914,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 446182,
+      "byteLength": 1752,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 447934,
+      "uri": "pickuptruckwreck01.bin"
+    }
+  ]
+}

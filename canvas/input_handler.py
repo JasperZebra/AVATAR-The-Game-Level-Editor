@@ -83,15 +83,28 @@ class InputHandler:
     def handle_mouse_press_2d(self, event):
         """Handle mouse press in 2D mode with gizmo integration"""
         if event.button() == Qt.MouseButton.LeftButton:
+            # Get editor/canvas coordinates
+            mouse_x = event.position().x()
+            mouse_y = event.position().y()
+
+            # Convert to level/world coordinates
+            if hasattr(self.canvas, 'screen_to_world'):
+                level_x, level_y = self.canvas.screen_to_world(mouse_x, mouse_y)
+            else:
+                # fallback to raw coordinates if screen_to_world not available
+                level_x, level_y = mouse_x, mouse_y
+
+            print(f"Mouse click at level coords: ({level_x:.1f}, {level_y:.1f})")
+
             # Check if an entity was clicked
-            entity = self.get_entity_at_position(event.position().x(), event.position().y())
+            entity = self.get_entity_at_position(mouse_x, mouse_y)
             
             if entity:
                 # Select entity
                 self.canvas.selected_entity = entity
                 self.canvas.selected = [entity]
                 
-                # CRITICAL: Update gizmo position for selected entity
+                # Update gizmo position for selected entity
                 if hasattr(self.canvas, 'gizmo_renderer'):
                     print(f"2D Click: Updating gizmo for {entity.name}")
                     self.canvas.gizmo_renderer.update_gizmo_for_entity(entity)
@@ -119,8 +132,8 @@ class InputHandler:
                     
                     print("Cleared selection - clicked empty space")
                             
-            self.drag_start_x = event.position().x()
-            self.drag_start_y = event.position().y()
+            self.drag_start_x = mouse_x
+            self.drag_start_y = mouse_y
             self.canvas.update()
             
         elif event.button() == Qt.MouseButton.MiddleButton:

@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "RedTeam"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-2410200744090609.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "icontexture",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAICAYAAABJYvnfAAAAT0lEQVR4nGN0rPr/nwEfaHXFK73v2j+88gza+/BKb2DAb33gH/zG/2/BL89Qj1+aiWGEAyaGEQ6YGEY4YGIY4YCJYYQDJoYRDpgG2gEDDQAkdgwME4lAhwAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 566,
+      "type": "VEC3",
+      "min": [
+        -0.29847102239727974,
+        -0.20355845801532269,
+        0.00012207403779029846
+      ],
+      "max": [
+        0.37165440805256367,
+        0.3433942683041096,
+        1.8043763525784016
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 566,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 566,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 566,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 2694,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 6792,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6856,
+      "byteLength": 4528,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11384,
+      "byteLength": 4528,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15912,
+      "byteLength": 9056,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 24968,
+      "byteLength": 5388,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 30356,
+      "uri": "redteam.bin"
+    }
+  ]
+}

@@ -1,0 +1,253 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        5
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Fake_LightCone",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "Fake_LightCone_State",
+      "translation": [
+        -0.4533326327800751,
+        -0.0019774700049310923,
+        0.0
+      ],
+      "children": [
+        2,
+        3
+      ]
+    },
+    {
+      "name": "Fake_LightCone_State1",
+      "translation": [
+        0.4533326327800751,
+        0.0019774700049310923,
+        0.0
+      ]
+    },
+    {
+      "name": "Fake_LightCone_State2",
+      "translation": [
+        0.4533326327800751,
+        0.0019774700049310923,
+        0.0
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        4
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1804200836523054.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "gradient",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAICAYAAACYhf2vAAAAVklEQVR4nO3RQQrEQAhE0Z8wyjdmk/sfdoZOk7lCb1LwVioItQHfiGDITPxIGKR5U2l7qsZTrKmO4vLC9q+se6+Padw/xgzBcErZWZz9fYC3gsVZXsEPWG8ECHCg5YsAAAAASUVORK5CYII="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 4,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 151,
+      "type": "VEC3",
+      "min": [
+        -2.144840843975544,
+        -2.144840843975544,
+        -4.117404702119529
+      ],
+      "max": [
+        2.144688251428306,
+        2.144688251428306,
+        0.0
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 151,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 151,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 151,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 648,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 256
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 256,
+      "byteLength": 1812,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2068,
+      "byteLength": 1208,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3276,
+      "byteLength": 1208,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4484,
+      "byteLength": 2416,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6900,
+      "byteLength": 1296,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8196,
+      "byteLength": 6,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 8202,
+      "uri": "fake_lightcone.bin"
+    }
+  ]
+}

@@ -1,0 +1,281 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        9
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Fake_Propeller_02",
+      "children": [
+        1,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "name": "Fake_Propeller_State",
+      "children": [
+        2,
+        3
+      ]
+    },
+    {
+      "name": "State2"
+    },
+    {
+      "name": "State1",
+      "children": [
+        4
+      ]
+    },
+    {
+      "name": "FX",
+      "rotation": [
+        0.70710676908493,
+        0.0,
+        0.0,
+        0.7071067932881648
+      ]
+    },
+    {
+      "name": "Aiming_BONE_02",
+      "translation": [
+        -4.933640480041504,
+        -0.3659594655036926,
+        0.0
+      ]
+    },
+    {
+      "name": "Aiming_BONE_03",
+      "translation": [
+        -4.933638095855713,
+        -0.3659399449825287,
+        -1.8865264654159546
+      ]
+    },
+    {
+      "name": "Aiming_BONE_01",
+      "translation": [
+        -4.933638095855713,
+        -0.3659387230873108,
+        1.9155676364898682
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        8
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\DPAYNE-M-1812200841647821.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "iconic_grey_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAPElEQVR4nO2UwREAMAiDaCbP6I6RR2EBuUN9bVmS6XQUwAS4hPEM8RGNiQKYYEwUwARjogAmGBMF+D3BAUKmAcACX6z3AAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 8,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC3",
+      "min": [
+        0.0,
+        -0.12613299954682589,
+        -0.1498153628781438
+      ],
+      "max": [
+        0.0,
+        0.1261024810373783,
+        0.1497848443686962
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 6,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 512
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 512,
+      "byteLength": 72,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 584,
+      "byteLength": 48,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 632,
+      "byteLength": 48,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 680,
+      "byteLength": 96,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 776,
+      "byteLength": 6,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 782,
+      "byteLength": 6,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 788,
+      "uri": "fake_propeller_02.bin"
+    }
+  ]
+}

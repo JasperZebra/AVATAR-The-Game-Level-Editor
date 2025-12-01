@@ -1,0 +1,280 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        9
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Bat",
+      "children": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "Bat_mesh01_Bat_LOD0"
+    },
+    {
+      "name": "Pelvis",
+      "rotation": [
+        -1.6970560899112813e-07,
+        -1.697056291050108e-07,
+        -0.7071067690849289,
+        0.7071067932881252
+      ],
+      "children": [
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "name": "Pelvis nub",
+      "translation": [
+        0.06651437282562257,
+        -3.983602013333091e-25,
+        -1.3234889800848443e-23
+      ],
+      "rotation": [
+        1.577721810442024e-30,
+        2.646977960169689e-23,
+        2.324849512917977e-24,
+        1.0
+      ]
+    },
+    {
+      "name": "R Wing",
+      "translation": [
+        0.027622660622000694,
+        -0.00499999988824129,
+        0.006498610135167837
+      ],
+      "rotation": [
+        -1.6970560068329883e-07,
+        1.697055948745422e-07,
+        -0.7071066498756364,
+        0.7071069124973935
+      ],
+      "children": [
+        5
+      ]
+    },
+    {
+      "name": "R Wing nub",
+      "translation": [
+        0.19999998807907104,
+        -2.9999998926028004e-08,
+        8.673617379884035e-19
+      ],
+      "rotation": [
+        -1.5777218104420233e-30,
+        0.0,
+        -1.3233918490827487e-23,
+        1.0
+      ]
+    },
+    {
+      "name": "L Wing",
+      "translation": [
+        0.027622649446129802,
+        0.004999999888241291,
+        0.006498610135167837
+      ],
+      "rotation": [
+        1.697056291050108e-07,
+        1.697056089911281e-07,
+        0.7071067690849289,
+        0.7071067932881252
+      ],
+      "children": [
+        7
+      ]
+    },
+    {
+      "name": "L Wing nub",
+      "translation": [
+        0.19999998807907107,
+        1.9999999881920028e-08,
+        0.0
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        8
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "Bat_1696624638_0.fakemat",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [],
+  "images": [],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 8,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 140,
+      "type": "VEC3",
+      "min": [
+        -0.20096438471227884,
+        -0.06207464821636677,
+        -0.01831110566854477
+      ],
+      "max": [
+        0.19998779240995646,
+        0.06381420325487852,
+        0.019409772008657455
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 140,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 140,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 140,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 408,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 512
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 512,
+      "byteLength": 1680,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2192,
+      "byteLength": 1120,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3312,
+      "byteLength": 1120,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4432,
+      "byteLength": 2240,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6672,
+      "byteLength": 816,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 7488,
+      "uri": "bat.bin"
+    }
+  ]
+}

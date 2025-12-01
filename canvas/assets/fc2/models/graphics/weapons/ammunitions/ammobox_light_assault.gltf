@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "AmmoBox_Light_Assault"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\SDORE2-M-2008031969774758.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "dualcolor06_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAiElEQVR4nO3aQRHAMBCAQMJk6l9W3VTCRUYedBUggPXCECZxEidxEidxEidxEidxEidxEidxEidxEidxEidxEidxEidxEidxEidxEidxErcf2vZH25qZf5AokziJkziJkziJkziJkziJkziJkziJkziJkziJkziJkziJkziJkziJkziJ83bAbQeqkQc7Tc0ndgAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 286,
+      "type": "VEC3",
+      "min": [
+        -0.08664204832166433,
+        -0.04577776417136192,
+        -0.002288888208568096
+      ],
+      "max": [
+        0.08661152981221676,
+        0.04574724566191435,
+        0.11093478184193373
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 286,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 286,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 286,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 681,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 3432,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3496,
+      "byteLength": 2288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5784,
+      "byteLength": 2288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8072,
+      "byteLength": 4576,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 12648,
+      "byteLength": 1362,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 14010,
+      "uri": "ammobox_light_assault.bin"
+    }
+  ]
+}

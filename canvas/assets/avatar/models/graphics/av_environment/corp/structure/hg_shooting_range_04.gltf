@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "HG_Shooting_Range_04"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MTREMBLAY-M-2702200933783883.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "corp_plastic_white_tile_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAZElEQVR4nO2UsQ3AMAgEwVUk7z8VBQWzWEpHxACRK5vmvuBbhLjTcMv5TFnvko7WWkAaM2rUJl2tXCD4AYcCwwMpjRk7U51uhYKAAocCwwMpjRk7U51uhYKAAocCwwN5w3h/+QBOrYOadDm5fwAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 528,
+      "type": "VEC3",
+      "min": [
+        -8.197271637618542,
+        -16.608813730068505,
+        -0.012451551854610443
+      ],
+      "max": [
+        8.178075495176017,
+        -10.180700085125864,
+        3.0148319927975535
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 528,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 528,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 528,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 1320,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 6336,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6400,
+      "byteLength": 4224,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10624,
+      "byteLength": 4224,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 14848,
+      "byteLength": 8448,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 23296,
+      "byteLength": 2640,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 25936,
+      "uri": "hg_shooting_range_04.bin"
+    }
+  ]
+}

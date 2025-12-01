@@ -1,0 +1,308 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        7
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "GasStationHouse_RoofBurn",
+      "children": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "name": "asStationHouse_RoofBurn01",
+      "translation": [
+        -0.01935715042054653,
+        -2.0916454792022705,
+        3.697221517562866
+      ],
+      "rotation": [
+        -0.5645389003645828,
+        0.0,
+        0.0,
+        0.8254064634924708
+      ]
+    },
+    {
+      "name": "asStationHouse_RoofBurn02",
+      "translation": [
+        0.007198790088295937,
+        4.027880668640137,
+        3.6739983558654785
+      ],
+      "rotation": [
+        0.5613595820917181,
+        0.0,
+        0.0,
+        0.8275720026643069
+      ]
+    },
+    {
+      "name": "asStationHouse_RoofBurn03",
+      "translation": [
+        0.007198790088295937,
+        4.259658336639404,
+        3.365072250366211
+      ],
+      "rotation": [
+        0.32361409271098285,
+        0.0,
+        0.0,
+        0.9461891560353285
+      ]
+    },
+    {
+      "name": "asStationHouse_RoofBurn04",
+      "translation": [
+        0.007198790088295937,
+        -2.3062353134155273,
+        3.372589349746704
+      ],
+      "rotation": [
+        -0.30705938150166334,
+        0.0,
+        0.0,
+        0.9516903573283779
+      ]
+    },
+    {
+      "name": "tationHouse_RoofBurn_LOD0"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        6
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "red",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8z8DwnwEPYMInOXwUAAASWwIOH0pJXQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 6,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 729,
+      "type": "VEC3",
+      "min": [
+        -4.589678635820746,
+        -2.5639210157096386,
+        3.0980559680610895
+      ],
+      "max": [
+        4.43586534820497,
+        4.459120452404022,
+        5.068514049053192
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 729,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 729,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 729,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 3060,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 420,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 384
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 384,
+      "byteLength": 8748,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9132,
+      "byteLength": 5832,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 14964,
+      "byteLength": 5832,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 20796,
+      "byteLength": 11664,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 32460,
+      "byteLength": 6120,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 38580,
+      "byteLength": 840,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 39420,
+      "uri": "gasstationhouse_roofburn.bin"
+    }
+  ]
+}

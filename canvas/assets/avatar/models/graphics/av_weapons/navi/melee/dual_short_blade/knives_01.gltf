@@ -1,0 +1,248 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        4
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Knives_01",
+      "children": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "Dual_Short_Blade_Frame",
+      "rotation": [
+        -0.29983723565133313,
+        -0.2935707607183233,
+        0.10085635045832689,
+        0.9020764035658978
+      ]
+    },
+    {
+      "name": "Dual_Short_Blade_Left",
+      "translation": [
+        -0.1570993959903717,
+        0.2746729850769043,
+        -0.010456410236656666
+      ],
+      "rotation": [
+        0.32855190910906634,
+        0.2682797235026334,
+        0.10709204881350061,
+        0.899227960200219
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        3
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\JDAPRATO-M-2008092454943298.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "z_wiptexture_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,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"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 682,
+      "type": "VEC3",
+      "min": [
+        -0.04696798603981733,
+        -0.03939939569681883,
+        -0.20117801427841187
+      ],
+      "max": [
+        0.05816827900707722,
+        0.039368877187371254,
+        0.5903195282444358
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 682,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 682,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 682,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 1320,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 1320,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 192
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 192,
+      "byteLength": 8184,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8376,
+      "byteLength": 5456,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 13832,
+      "byteLength": 5456,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 19288,
+      "byteLength": 10912,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 30200,
+      "byteLength": 2640,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 32840,
+      "byteLength": 2640,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 35480,
+      "uri": "knives_01.bin"
+    }
+  ]
+}

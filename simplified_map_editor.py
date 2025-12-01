@@ -27,6 +27,9 @@ from entity_export_import import (
     setup_entity_export_import_system
 )
 
+from set_patch_folder import LevelSelectorDialog, integrate_patch_manager
+from cache_manager import get_cache_manager, shutdown_cache_manager
+from canvas.terrain_renderer import TerrainRenderer
 from canvas.map_canvas_gpu import MapCanvas
 from file_converter import FileConverter
 from all_in_one_copy_paste import setup_complete_smart_system
@@ -42,125 +45,379 @@ import xml.etree.ElementTree as ET
 import shutil
 import subprocess
 import platform
+from pathlib import Path
 
 class SimplifiedMapEditor(QMainWindow):
     """Simplified main application window for XML Entity Coordinate Editor"""
     
-    def __init__(self):
-        """Fixed initialization method"""
+    def __init__(self, game_mode="avatar"):
+        """Fixed initialization method with game mode support and patch folder integration
+            
+        Args:
+            game_mode (str): Either "avatar" or "farcry2"
+        """
         super().__init__()
+            
+        # Store game mode FIRST
+        self.game_mode = game_mode
+
+        # Create startup progress dialog
+        from simplified_map_editor import EnhancedProgressDialog
+        startup_dialog = EnhancedProgressDialog(
+            "Initializing Editor", 
+            None,  # No parent yet since we're in __init__
+            game_mode=game_mode
+        )
+        startup_dialog.show()
+        QApplication.processEvents()
         
-        # Initialize basic properties first
+        def log(msg):
+            """Helper to log to both console and dialog"""
+            print(msg)
+            startup_dialog.append_log(msg)
+            QApplication.processEvents()
+
+        # *** NEW: Setup game-specific paths ***
+        startup_dialog.set_status("Setting up game paths...")
+        startup_dialog.set_progress(5)
+        log(f"Initializing editor for: {game_mode}")
+        
+        from canvas.game_paths_config import setup_game_paths
+        setup_game_paths(self)
+
+        self.current_mode = "2D"
+
+        # ================================================================
+        #   WORLDS FOLDER AUTO-DETECTION  (REQUIRED FOR 3D MODELS)
+        # ================================================================
+        startup_dialog.set_status("Detecting game folders...")
+        startup_dialog.set_progress(10)
+        
+        self.worlds_folder = None
+        self.game_data_path = None
+
+        window_title_prefix = "Avatar: The Game" if game_mode == "avatar" else "Far Cry 2"
+
+        # ================================================================
+        #   CACHE MANAGER
+        # ================================================================
+        startup_dialog.set_status("Initializing cache manager...")
+        startup_dialog.set_progress(15)
+        self.cache = get_cache_manager()
+        log("✓ Cache manager initialized")
+            
+        # ================================================================
+        #   BASIC PROPERTIES
+        # ================================================================
+        startup_dialog.set_status("Setting up data structures...")
+        startup_dialog.set_progress(20)
         self.entities = []
         self.selected_entity = None
         self.xml_tree = None
         self.xml_file_path = None
-        self.grid_config = GridConfig(
-            sector_count_x=16,
-            sector_count_y=16,
-            sector_granularity=64,
-            maps=[]
-        )
+            
+        # ================================================================
+        #   GRID CONFIG
+        # ================================================================
+        if game_mode == "farcry2":
+            self.grid_config = GridConfig(
+                sector_count_x=16,
+                sector_count_y=16,
+                sector_granularity=64,
+                maps=[]
+            )
+            self.is_fc2_world = True
+            self.world_grid_size = 5
+            self.current_fc2_world = "world1"
+            self.current_fc2_region = None
+        else:
+            self.grid_config = GridConfig(
+                sector_count_x=16,
+                sector_count_y=16,
+                sector_granularity=64,
+                maps=[]
+            )
+            self.is_fc2_world = False
+            
         self.current_map = None
 
-        # Initialize entity editor as None
+        # Entity editor
         self.entity_editor = None        
-                    
-        # Initialize modification tracking flags for main files
+
+        # Modification tracking
         self.entities_modified = False
         self.xml_tree_modified = False
         self.omnis_tree_modified = False
         self.managers_tree_modified = False
         self.sectordep_tree_modified = False
 
-        # Initialize WorldSectors properties
-        self.objects = []  # List for objects from .data files
-        self.worldsectors_path = None  # Path to worldsectors folder
-        self.objects_modified = False  # Track object modifications
-        self.show_objects = True  # Toggle for object visibility
-        self.worldsectors_trees = {}  # Dict of {file_path: tree}
-        self.worldsectors_modified = {}  # Dict of {file_path: bool}
+        # WorldSectors
+        self.objects = []
+        self.worldsectors_path = None
+        self.objects_modified = False
+        self.show_objects = True
+        self.worldsectors_trees = {}
+        self.worldsectors_modified = {}
 
-        # Additional trees for other main files
+        # SDAT support
+        self.sdat_path = None
+        self.terrain_viewer = None
+        self.terrain_dock = None
+
+        # Additional trees
         self.omnis_tree = None
         self.managers_tree = None
         self.sectordep_tree = None
 
-        # Add tree entity type cache
+        # Caches & config
         self.tree_entity_type_cache = {}
         self._last_selection_log_time = 0
-
-        # Initialize file configuration
         self.file_config = LevelFileConfig()
 
-        # Setup conversion tools
+        # User preferences
+        self.force_dark_theme = False
+        self.invert_mouse_pan = False
+
+        # UI setup
+        startup_dialog.set_status("Setting up menus...")
+        startup_dialog.set_progress(25)
+        self.setup_cache_menu() 
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        self.setup_mode_indicator()
+
+        # Conversion tools
+        startup_dialog.set_status("Initializing file converter...")
+        startup_dialog.set_progress(30)
         try:
             self.setup_conversion_tools()
+            log("✓ File converter initialized")
         except Exception as e:
-            print(f"Warning: Could not setup conversion tools: {e}")
-            # Create a minimal file converter
+            log(f"⚠ Could not setup conversion tools: {e}")
             self.file_converter = None
 
-        # Setup UI (this creates the canvas) - PROTECTED
-        try:
-            self.setup_ui()
-        except Exception as e:
-            print(f"Error setting up UI: {e}")
-            raise
-
-        # Setup sector boundaries AFTER canvas is created
-        try:
-            self.setup_sector_boundary_ui()
-        except Exception as e:
-            print(f"Warning: Could not setup sector boundaries: {e}")
-
-        # Set window title
-        self.setWindowTitle("AVATAR: The Game Level Editor | Version 1.1 | Made By: Jasper Zebra")
-
-        # Connect entity selection signal from canvas to handler - PROTECTED
-        try:
-            self.canvas.entitySelected.connect(self.on_entity_selected)        
-        except Exception as e:
-            print(f"Warning: Could not connect entity selection signal: {e}")
-
-        # Setup 3D UI connections - PROTECTED
-        try:
-            self.setup_3d_ui_connections()
-        except Exception as e:
-            print(f"Warning: Could not setup 3D UI connections: {e}")
-        
-        # Set window size
-        self.resize(1800, 1100)
-
+        # ================================================================
+        # CRITICAL: Setup copy/paste system BEFORE creating UI
+        # This binds all the methods that the UI components need
+        # ================================================================
+        startup_dialog.set_status("Setting up copy/paste system...")
+        startup_dialog.set_progress(35)
         try:
             setup_complete_smart_system(self)
-            if hasattr(self, 'entity_clipboard'):
-                self.entity_clipboard._get_all_existing_entity_ids = lambda: self.get_all_existing_entity_ids()
-                self.entity_clipboard._get_all_existing_entity_names = lambda: self.get_all_existing_entity_names()
-                print("Copy/paste system helper methods bound successfully")
-            else:
-                print("entity_clipboard not created during setup")
+            # Note: setup_complete_smart_system binds all necessary methods including:
+            # - copy_selected_entities
+            # - paste_entities  
+            # - duplicate_selected_entities
+            # - delete_selected_entities
+            # - select_all_entities (needed by entity browser!)
+            # - get_all_existing_entity_ids
+            # - get_all_existing_entity_names
+            # - generate_new_entity_id
+            # - generate_unique_entity_name
+            # - _find_best_worldsector_for_entity
+            # - _add_entity_xml_to_sector
+            log("✓ Copy/paste system ready")
         except Exception as e:
-            print(f"Warning: Could not setup copy/paste system: {e}")
-        
+            log(f"⚠ Could not setup copy/paste: {e}")
+
+        # Main UI (creates canvas and entity browser)
+        # NOW the UI can safely reference methods like select_all_entities
+        startup_dialog.set_status("Creating main interface...")
+        startup_dialog.set_progress(40)
         try:
-            setup_entity_export_import_system(self)
+            self.setup_ui()
+            log("✓ Main UI created")
         except Exception as e:
-            print(f"Warning: Could not setup export/import system: {e}")
-        
-        # Setup manual sector movement (right-click menu) - PROTECTED
+            log(f"✗ Error setting up UI: {e}")
+            raise
+
+        # *** CRITICAL FIX: Setup enhanced context menu AFTER canvas is created ***
+        startup_dialog.set_status("Setting up context menu...")
+        startup_dialog.set_progress(45)
         try:
             self.add_sector_move_to_context_menu()
+            log("✓ Enhanced context menu ready")
         except Exception as e:
-            print(f"Warning: Could not setup sector movement menu: {e}")
-        
-        # Show welcome message - PROTECTED
+            log(f"⚠ Could not setup context menu: {e}")
+
+        # *** NEW: Update model loader with game-specific paths ***
+        startup_dialog.set_status("Configuring 3D model loader...")
+        startup_dialog.set_progress(50)
+        if hasattr(self, 'canvas') and hasattr(self.canvas, 'model_loader'):
+            from canvas.game_paths_config import update_model_loader_for_game
+            update_model_loader_for_game(
+                self.canvas.model_loader, 
+                self.game_path_config
+            )
+            log("✓ Model loader configured")
+
+        # ================================================================
+        #   LINK CANVAS (NO MODEL INITIALIZATION HERE ANYMORE!)
+        # ================================================================
+        startup_dialog.set_status("Linking canvas...")
+        startup_dialog.set_progress(60)
+        if hasattr(self, 'canvas'):
+            self.canvas.editor = self
+            self.canvas.is_fc2_world = self.is_fc2_world
+            self.canvas.game_mode = self.game_mode
+                
+            if self.worlds_folder:
+                self.canvas.main_window = self
+                log("✓ Canvas linked for 3D models")
+
+        # ================================================================
+        #   Sector boundaries UI
+        # ================================================================
+        startup_dialog.set_status("Setting up sector boundaries...")
+        startup_dialog.set_progress(65)
         try:
-            self.show_welcome_message_updated()
+            self.setup_sector_boundary_ui()
+            log("✓ Sector boundaries configured")
+        except Exception as e:
+            log(f"⚠ Could not setup sector boundaries: {e}")
+
+        # Window title
+        self.setWindowTitle(f"{window_title_prefix} Level Editor | Version 1.8 | Made By: Jasper Zebra")
+
+        # Connect entity selection
+        startup_dialog.set_status("Connecting signals...")
+        startup_dialog.set_progress(70)
+        try:
+            self.canvas.entitySelected.connect(self.on_entity_selected)
+            log("✓ Entity selection connected")
+        except Exception as e:
+            log(f"⚠ Could not connect entity selection: {e}")
+
+        # Window size
+        self.resize(1800, 1100)
+
+        # Theme
+        startup_dialog.set_status("Applying theme...")
+        startup_dialog.set_progress(75)
+        try:
+            self.apply_theme()
+            if hasattr(self, 'theme_toggle_action'):
+                self.theme_toggle_action.setChecked(self.force_dark_theme)
+                self.theme_toggle_action.setText("Light Mode" if self.force_dark_theme else "Dark Mode")
+            log("✓ Theme applied")
+        except Exception as e:
+            log(f"⚠ Could not apply theme: {e}")
+
+        # Entity import/export
+        startup_dialog.set_status("Setting up entity export/import...")
+        startup_dialog.set_progress(85)
+        try:
+            setup_entity_export_import_system(self)
+            log("✓ Entity export/import ready")
+        except Exception as e:
+            log(f"⚠ Could not setup entity export/import: {e}")
+
+        # Patch folder integration
+        startup_dialog.set_status("Integrating patch manager...")
+        startup_dialog.set_progress(90)
+        try:
+            from set_patch_folder import integrate_patch_manager
+            integrate_patch_manager(self)
+            log("✓ Patch manager integrated")
+                
+            if hasattr(self, 'patch_manager') and not self.patch_manager.is_configured():
+                QTimer.singleShot(1000, lambda: self.status_bar.showMessage(
+                    "Tip: Set your patch folder via File → Set Patch Folder", 5000))
+        except Exception as e:
+            log(f"⚠ Could not integrate patch manager: {e}")
+
+        startup_dialog.set_status("Finalizing initialization...")
+        startup_dialog.set_progress(95)
+        log(f"✓ Editor initialization complete for {game_mode}")
+
+        # Close startup dialog
+        startup_dialog.set_progress(100)
+        startup_dialog.mark_complete()
+        startup_dialog.stop_icon()
+        startup_dialog.close()
+
+        # Welcome screen
+        try:
+            QTimer.singleShot(100, self.show_welcome_message_conditionally)
         except Exception as e:
             print(f"Warning: Could not show welcome message: {e}")
-            # Fallback basic message
-            print("Simplified Map Editor loaded successfully!")
+
+    def capture_canvas_logs(self, startup_dialog):
+        """Capture and display canvas initialization logs"""
+        import sys
+        from io import StringIO
+        
+        # Create a custom stdout that captures prints
+        class TeeOutput:
+            def __init__(self, dialog):
+                self.terminal = sys.stdout
+                self.dialog = dialog
+                
+            def write(self, message):
+                self.terminal.write(message)
+                if message.strip():  # Only log non-empty lines
+                    self.dialog.append_log(message.strip())
+                    QApplication.processEvents()
+                    
+            def flush(self):
+                self.terminal.flush()
+        
+        # Replace stdout temporarily
+        old_stdout = sys.stdout
+        sys.stdout = TeeOutput(startup_dialog)
+        
+        return old_stdout
+
+    def setup_ui(self):
+        """Initialize the UI components - UPDATED with game mode support"""
+        # Create central widget
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # Create main layout
+        main_layout = QVBoxLayout(central_widget)
+        
+        # Create menu bar
+        self.create_menus()
+        
+        # Create toolbar
+        self.create_toolbar()
+        
+        # Create canvas for editing
+        print("Initializing canvas...")
+        self.canvas = MapCanvas(self)
+        
+        # Set invert mouse pan preference if canvas supports it
+        if hasattr(self.canvas, 'invert_mouse_pan'):
+            self.canvas.invert_mouse_pan = self.invert_mouse_pan
+        
+        # Pass game mode to canvas and editor references
+        if hasattr(self.canvas, 'game_mode'):
+            self.canvas.game_mode = self.game_mode
+        self.canvas.editor = self
+        self.canvas.is_fc2_world = (self.game_mode == "farcry2")
+        
+        main_layout.addWidget(self.canvas)
+        
+        # Create status bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        
+        # Set status bar message based on game mode
+        if self.game_mode == "farcry2":
+            self.status_bar.showMessage("Far Cry 2 Mode - Ready to load world")
+        else:
+            self.status_bar.showMessage("Avatar Mode - Ready to load level")
+        
+        # CRITICAL: Make sure these are called
+        self.create_side_panel()      # â† This should be here
+        self.create_entity_browser()  # â† And this
+                        
+        # Connect entity selection signal from canvas to handler
+        try:
+            self.canvas.entitySelected.connect(self.on_entity_selected)
+        except Exception as e:
+            print(f"Warning: Could not connect entity selection signal: {e}")
 
     def show_main_context_menu(self, event):
         """Main context menu that delegates to the enhanced context menu"""
@@ -175,25 +432,34 @@ class SimplifiedMapEditor(QMainWindow):
             menu.exec(event.globalPosition().toPoint())
 
     def show_welcome_message_updated(self):
-        """Updated welcome message with custom dialog size"""
+        """Show welcome message and open visual level selector when Start Modding is pressed"""
         from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
-        
+        from PyQt6.QtGui import QIcon
+
         # Create custom dialog
         dialog = QDialog(self)
         dialog.setWindowTitle("Welcome to Simplified Map Editor")
-        dialog.setMinimumSize(600, 500)  # Set custom size
+        dialog.setMinimumSize(600, 500)
         dialog.resize(600, 500)
-        
+
+        # Set window icon depending on game
+        if hasattr(self, "game_mode") and self.game_mode == "farcry2":
+            dialog.setWindowIcon(QIcon("icon/fc2_icon.ico"))
+        else:
+            dialog.setWindowIcon(QIcon("icon/avatar_icon.ico"))
+
         layout = QVBoxLayout(dialog)
         layout.setSpacing(15)
-        
+
         # Title
         title_label = QLabel("Simplified Map Editor")
-        title_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #2196F3; margin-bottom: 10px;")
+        title_label.setStyleSheet(
+            "font-size: 24px; font-weight: bold; color: #2196F3; margin-bottom: 10px;"
+        )
         layout.addWidget(title_label)
-        
-        # Main content
-        content_text = """
+
+        # Avatar content (full original text)
+        avatar_text = """
     <b>Welcome to the Avatar: The Game Level Editor!</b><br><br>
 
     <b>Quick Start:</b><br>
@@ -224,20 +490,63 @@ class SimplifiedMapEditor(QMainWindow):
     View and selection controls<br><br>
 
     <b>Ready to get started? Click the green "Start Modding!" button!</b><br>
-
     """
-        
+
+        # Far Cry 2 content (full original text)
+        fc2_text = """
+    <b>Welcome to the Far Cry 2 World Editor Mode!</b><br><br>
+
+    <b>Quick Start:</b><br>
+
+    1. Click the green <b>"Select World"</b> button to load the main world grid<br>
+    2. Choose your <b>"FC2 Worlds"</b> directory containing region XML files<br>
+    3. Select one of the <b>25 world regions</b> (5×5 grid) to begin editing<br>
+    4. Start editing entities, props, and terrain links!<br><br>
+
+    <b>Key Features:</b><br>
+
+    <b>World Grid System:</b> Edit up to 25 world sectors, each 16×16 regions<br>
+    <b>Smart linking:</b> Automatically manages entities across region borders<br>
+    <b>Entity Editor:</b> Modify positions, rotations, and properties<br>
+    <b>Copy/Paste system:</b> Duplicate entities across world regions<br>
+    <b>Visual Editor:</b> Zoom, pan, and select with gizmo support<br><br>
+
+    <b>Keyboard Shortcuts:</b><br>
+
+    <b>Ctrl+O:</b> Load World Grid<br>
+    <b>Delete:</b> Delete selected entities<br>
+    <b>Ctrl+C / Ctrl+V:</b> Copy and paste between world sectors<br><br>
+
+    <b>Right-click menu:</b><br>
+
+    Move entities between regions<br>
+    Duplicate or edit linked props<br>
+    Access debug and view controls<br><br>
+
+    <b>Ready to explore the open world? Click the green "Start Modding!" button!</b><br>
+    """
+
+        # Choose which content to show
+        if hasattr(self, "game_mode") and self.game_mode == "farcry2":
+            content_text = fc2_text
+            title_label.setStyleSheet(
+                "font-size: 24px; font-weight: bold; color: #FF5722; margin-bottom: 10px;"
+            )
+        else:
+            content_text = avatar_text
+
+        # Main content label
         content_label = QLabel(content_text)
         content_label.setWordWrap(True)
         content_label.setStyleSheet("font-size: 13px; line-height: 1.4;")
         layout.addWidget(content_label)
-        
+
         # Button layout
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-        
-        ok_button = QPushButton("Start Modding!")
-        ok_button.setStyleSheet("""
+
+        start_button = QPushButton("Start Modding!")
+        start_button.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
                 color: white;
@@ -251,13 +560,45 @@ class SimplifiedMapEditor(QMainWindow):
                 background-color: #45a049;
             }
         """)
-        ok_button.clicked.connect(dialog.accept)
-        button_layout.addWidget(ok_button)
-        
+
+        # Open LevelSelectorDialog when pressed
+        def open_level_selector():
+            dialog.accept()  # close welcome dialog first
+            self.select_level() 
+
+        start_button.clicked.connect(open_level_selector)
+        button_layout.addWidget(start_button)
+
         layout.addLayout(button_layout)
-        
-        # Show dialog
+
         dialog.exec()
+
+    def show_welcome_message_conditionally(self):
+        """Show welcome message only if not disabled by user preference"""
+        try:
+            import json
+            config_file = "editor_config.json"
+            
+            # Check if user has disabled welcome screen
+            try:
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+                    if not config.get('show_welcome', True):
+                        print("Welcome screen disabled by user preference")
+                        
+                        # Auto-open level selector if patch folder is configured
+                        if hasattr(self, 'patch_manager') and self.patch_manager.is_configured():
+                            from PyQt6.QtCore import QTimer
+                            QTimer.singleShot(500, lambda: self.select_level())
+                        return
+            except:
+                pass  # File doesn't exist or error reading - show welcome
+            
+            # Show the welcome message
+            self.show_welcome_message_updated()
+            
+        except Exception as e:
+            print(f"Error showing welcome message: {e}")
 
     def show_about(self):
         """Show about dialog with custom size"""
@@ -291,7 +632,7 @@ class SimplifiedMapEditor(QMainWindow):
     <b>Always backup your level files before editing!</b><br>
     <b>Close the game completely before saving changes.</b><br><br>
         
-    <b>ðŸŒŸ Core Features:</b><br>
+    <b>Ã°Å¸Å’Å¸ Core Features:</b><br>
 
     Load and edit Avatar: The Game level XML files<br>
     Visual entity editing with 2D view mode<br>
@@ -299,10 +640,10 @@ class SimplifiedMapEditor(QMainWindow):
     Entity browser with <b>color-coded</b> type grouping<br>
     Sector boundary visualization and violation detection<br>
     Move entities between different sectors<br>
-    Automatic file format conversion <b>(FCB â†” XML)</b><br>
+    Automatic file format conversion <b>(FCB Ã¢â€ â€ XML)</b><br>
     Grid configuration support<br><br>
 
-    <b>ðŸŽ¯ Designed for:</b><br>
+    <b>Ã°Å¸Å½Â¯ Designed for:</b><br>
 
     Avatar: The Game community<br><br>
     
@@ -426,6 +767,17 @@ class SimplifiedMapEditor(QMainWindow):
         toggle_entities_action.setCheckable(True)
         toggle_entities_action.setChecked(True)
         view_menu.addAction(toggle_entities_action)
+        
+        view_menu.addSeparator()
+        
+        # Invert mouse pan action
+        invert_mouse_action = QAction("Invert Mouse Pan", self)
+        invert_mouse_action.triggered.connect(self.toggle_invert_mouse)
+        invert_mouse_action.setCheckable(True)
+        invert_mouse_action.setChecked(False)
+        invert_mouse_action.setToolTip("Invert middle mouse button camera panning direction")
+        view_menu.addAction(invert_mouse_action)
+        self.invert_mouse_action = invert_mouse_action
             
         # Add to Tools menu or create one
         tools_menu = self.menuBar().addMenu("Tools")
@@ -449,7 +801,7 @@ class SimplifiedMapEditor(QMainWindow):
         self.toolbar = QToolBar("Main Toolbar")
         self.addToolBar(self.toolbar)
         
-        # Main unified "Select Level" button - make it prominent
+        # --- toolbar actions ---
         select_level_action = QAction("Select Level", self)
         select_level_action.triggered.connect(self.select_level)
         select_level_action.setToolTip("Load complete level (world data + level objects)")
@@ -457,7 +809,6 @@ class SimplifiedMapEditor(QMainWindow):
         
         self.toolbar.addSeparator()
         
-        # Individual load buttons (smaller, for advanced users)
         load_world_action = QAction("Load World", self)
         load_world_action.triggered.connect(self.load_level_folder)
         load_world_action.setToolTip("Load world data only (XML files)")
@@ -470,13 +821,11 @@ class SimplifiedMapEditor(QMainWindow):
         
         self.toolbar.addSeparator()
 
-        # Entity Editor button
         entity_editor_toolbar_action = QAction("Entity Editor", self)
         entity_editor_toolbar_action.triggered.connect(self.open_entity_editor)
         entity_editor_toolbar_action.setToolTip("Open Entity Properties Editor (Ctrl+E)")
         self.toolbar.addAction(entity_editor_toolbar_action)
         
-        # Export/Import buttons
         export_toolbar_action = QAction("Export", self)
         export_toolbar_action.triggered.connect(self.show_entity_export_dialog)
         export_toolbar_action.setToolTip("Export selected entities to file")
@@ -487,26 +836,35 @@ class SimplifiedMapEditor(QMainWindow):
         import_toolbar_action.setToolTip("Import entities from file")
         self.toolbar.addAction(import_toolbar_action)
         
+        toggle_mode_action = QAction("Toggle 2D/3D", self)
+        toggle_mode_action.triggered.connect(self.toggle_mode)
+        toggle_mode_action.setToolTip("Switch between 2D and 3D view")
+        self.toolbar.addAction(toggle_mode_action)
+
         self.toolbar.addSeparator()
         
-        # Add view actions
         reset_view_action = QAction("Reset View", self)
         reset_view_action.triggered.connect(self.reset_view)
         self.toolbar.addAction(reset_view_action)
         
         self.toolbar.addSeparator()
         
-        # Toggle visibility buttons
         toggle_entities_action = QAction("Toggle Entities", self)
         toggle_entities_action.triggered.connect(self.toggle_entities)
         toggle_entities_action.setCheckable(True)
         toggle_entities_action.setChecked(True)
         toggle_entities_action.setToolTip("Show/hide entities (E)")
         self.toolbar.addAction(toggle_entities_action)
+        
+        self.theme_toggle_action = QAction("Dark Mode", self)
+        self.theme_toggle_action.triggered.connect(self.toggle_theme)
+        self.theme_toggle_action.setCheckable(True)
+        self.theme_toggle_action.setChecked(False)
+        self.theme_toggle_action.setToolTip("Toggle between Light and Dark theme")
+        self.toolbar.addAction(self.theme_toggle_action)
                             
         self.toolbar.addSeparator()
         
-        # Add create sector button
         create_sector_action = QAction("New Sector", self)
         create_sector_action.triggered.connect(self.show_create_sector_dialog)
         create_sector_action.setToolTip("Create a new WorldSector file")
@@ -514,7 +872,6 @@ class SimplifiedMapEditor(QMainWindow):
 
         self.toolbar.addSeparator()
                     
-        # Add sector boundaries toggle
         sector_action = QAction("Show Sectors", self)
         sector_action.setCheckable(True)
         sector_action.setChecked(False)
@@ -522,7 +879,6 @@ class SimplifiedMapEditor(QMainWindow):
         sector_action.setToolTip("Show/hide sector boundaries")
         self.toolbar.addAction(sector_action)
                     
-        # Add violations check button
         check_violations_action = QAction("Check Violations", self)
         check_violations_action.triggered.connect(self.check_all_violations)
         check_violations_action.setToolTip("Check for entities outside sector boundaries")
@@ -530,10 +886,23 @@ class SimplifiedMapEditor(QMainWindow):
 
         self.toolbar.addSeparator()
                     
-        # Save Level button (converts to FCB)
         save_level_action = QAction("Save Level", self)
         save_level_action.triggered.connect(self.save_level)
         self.toolbar.addAction(save_level_action)
+
+    def setup_mode_indicator(self):
+        """Setup mode indicator in status bar"""
+        try:
+            # Create mode indicator label
+            self.mode_label = QLabel("🔲 2D Mode")
+            self.mode_label.setStyleSheet("padding: 2px 10px; font-weight: bold; color: #2196F3;")
+            
+            # Add to status bar as permanent widget (stays on right side)
+            self.status_bar.addPermanentWidget(self.mode_label)
+            
+            print("Mode indicator added to status bar")
+        except Exception as e:
+            print(f"Error setting up mode indicator: {e}")
 
     def create_side_panel(self):
         """Create a dock widget for the side panel controls - 2D Editor"""
@@ -553,7 +922,6 @@ class SimplifiedMapEditor(QMainWindow):
         select_level_button = QPushButton("Select Level")
         select_level_button.clicked.connect(self.select_level)
         select_level_button.setToolTip("Load complete level (world data + level objects)\nTwo-step process: select worlds folder, then levels folder")
-        # Make the button larger and more prominent
         select_level_button.setMinimumHeight(45)
         select_level_button.setStyleSheet("""
             QPushButton {
@@ -576,7 +944,7 @@ class SimplifiedMapEditor(QMainWindow):
         # Level info label
         self.level_info_label = QLabel("No level loaded")
         self.level_info_label.setWordWrap(True)
-        self.level_info_label.setStyleSheet("QLabel { color: white; font-style: italic; margin: 5px; }")
+        self.level_info_label.setStyleSheet("font-style: italic; margin: 5px;")
         level_layout.addWidget(self.level_info_label)
         
         dock_layout.addWidget(level_group)
@@ -654,10 +1022,12 @@ class SimplifiedMapEditor(QMainWindow):
         # Add header explaining the color system
         header_label = QLabel("Entity type color coding:")
         header_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        header_label.setStyleSheet("color: white; margin-bottom: 8px; padding: 2px;")
+        header_label.setStyleSheet("margin-bottom: 8px; padding: 2px;")
         entity_types_layout.addWidget(header_label)
+        self.entity_colors_header = header_label  # Store reference for theme updates
 
         # Add color samples with labels
+        self.color_legend_labels = []  # Store references for theme updates
         self.create_color_legend_item(entity_types_layout, QColor(52, 152, 255), "Vehicles")
         self.create_color_legend_item(entity_types_layout, QColor(46, 255, 113), "NPCs/Characters")
         self.create_color_legend_item(entity_types_layout, QColor(255, 76, 60), "Weapons/Combat")
@@ -677,12 +1047,12 @@ class SimplifiedMapEditor(QMainWindow):
         info_layout = QVBoxLayout(info_group)
         
         self.entity_count_label = QLabel("Entities: 0")
-        self.entity_count_label.setStyleSheet("font-weight: bold; color: white;")
+        self.entity_count_label.setStyleSheet("font-weight: bold;")
         info_layout.addWidget(self.entity_count_label)
         
         self.selected_entity_label = QLabel("No entity selected")
         self.selected_entity_label.setWordWrap(True)
-        self.selected_entity_label.setStyleSheet("color: white; margin-top: 5px;")
+        self.selected_entity_label.setStyleSheet("margin-top: 5px;")
         info_layout.addWidget(self.selected_entity_label)
         
         dock_layout.addWidget(info_group)
@@ -701,8 +1071,155 @@ class SimplifiedMapEditor(QMainWindow):
         dock.setVisible(True)
         dock.show()
         
+        # Update legend label colors for the current theme immediately
+        if hasattr(self, "apply_theme"):
+            if getattr(self, "force_dark_theme", False):
+                self.entity_colors_header.setStyleSheet("color: white; margin-bottom: 8px; padding: 2px;")
+                for label in self.color_legend_labels:
+                    label.setStyleSheet("color: white;")
+            else:
+                self.entity_colors_header.setStyleSheet("color: black; margin-bottom: 8px; padding: 2px;")
+                for label in self.color_legend_labels:
+                    label.setStyleSheet("color: black;")
+
         print("Side panel created for 2D level editor")
-              
+
+    def update_mode_indicator(self):
+        """Update the mode indicator in the status bar"""
+        if not hasattr(self, 'canvas'):
+            return
+        
+        if not hasattr(self, 'mode_label'):
+            return
+        
+        try:
+            if self.canvas.mode == 0:  # 2D mode
+                self.mode_label.setText("🔲 2D Mode")
+                self.mode_label.setStyleSheet("padding: 2px 10px; font-weight: bold; color: #2196F3;")
+            else:  # 3D mode
+                self.mode_label.setText("🎮 3D Mode")
+                self.mode_label.setStyleSheet("padding: 2px 10px; font-weight: bold; color: #FF9800;")
+        except Exception as e:
+            print(f"Error updating mode indicator: {e}")
+
+    def setup_cache_menu(self):
+        """Setup cache management menu"""
+        from PyQt6.QtWidgets import QMessageBox
+        from PyQt6.QtGui import QAction
+        
+        cache_menu = self.menuBar().addMenu("Cache")
+        
+        # View cache statistics
+        stats_action = QAction("View Cache Statistics", self)
+        stats_action.triggered.connect(self.show_cache_statistics)
+        stats_action.setShortcut("Ctrl+Shift+C")
+        cache_menu.addAction(stats_action)
+        
+        cache_menu.addSeparator()
+        
+        # Clear all caches
+        clear_all_action = QAction("Clear All Caches", self)
+        clear_all_action.triggered.connect(self.clear_all_caches)
+        cache_menu.addAction(clear_all_action)
+        
+        # Clear specific cache types
+        clear_fcb_action = QAction("Clear FCB Conversion Cache", self)
+        clear_fcb_action.triggered.connect(lambda: self.cache.clear_cache_type('fcb_conversion'))
+        cache_menu.addAction(clear_fcb_action)
+        
+        clear_xml_action = QAction("Clear XML Parsing Cache", self)
+        clear_xml_action.triggered.connect(lambda: self.cache.clear_cache_type('xml_parsing'))
+        cache_menu.addAction(clear_xml_action)
+        
+        clear_disk_action = QAction("Clear Disk Cache", self)
+        clear_disk_action.triggered.connect(self.clear_disk_cache)
+        cache_menu.addAction(clear_disk_action)
+        
+        cache_menu.addSeparator()
+        
+        # Toggle caching
+        self.cache_enabled_action = QAction("Enable Caching", self)
+        self.cache_enabled_action.setCheckable(True)
+        self.cache_enabled_action.setChecked(self.cache.enabled)
+        self.cache_enabled_action.triggered.connect(self.toggle_caching)
+        cache_menu.addAction(self.cache_enabled_action)
+
+    def toggle_mode(self):
+        """Switch between 2D and 3D modes."""
+        if self.current_mode == "2D":
+            self.current_mode = "3D"
+            self.canvas.set_3d_mode(True)  # tell the canvas to switch to 3D rendering
+        else:
+            self.current_mode = "2D"
+            self.canvas.set_3d_mode(False)  # back to 2D rendering
+
+        # Update the mode indicator label
+        self.setup_mode_indicator()
+
+    def show_cache_statistics(self):
+        """Show cache statistics dialog"""
+        stats = self.cache.get_cache_stats()
+        
+        msg = f"""Cache Statistics
+    ================
+
+    Status: {'ENABLED' if stats['enabled'] else 'DISABLED'}
+    Memory Usage: {stats['memory_usage_mb']:.1f} / {stats['max_memory_mb']:.1f} MB
+
+    Cache Sizes:
+    FCB Conversions: {stats['cache_sizes']['fcb_conversion']} entries
+    XML Parsing: {stats['cache_sizes']['xml_parsing']} entries
+    Object Parsing: {stats['cache_sizes']['object_parsing']} entries
+    Terrain: {stats['cache_sizes']['terrain']} entries
+
+    Hit Rates:
+    FCB: {stats['hit_rates']['fcb']['rate']:.1f}% ({stats['hit_rates']['fcb']['hits']} hits, {stats['hit_rates']['fcb']['misses']} misses)
+    XML: {stats['hit_rates']['xml']['rate']:.1f}% ({stats['hit_rates']['xml']['hits']} hits, {stats['hit_rates']['xml']['misses']} misses)
+    Objects: {stats['hit_rates']['object']['rate']:.1f}% ({stats['hit_rates']['object']['hits']} hits, {stats['hit_rates']['object']['misses']} misses)
+    Terrain: {stats['hit_rates']['terrain']['rate']:.1f}% ({stats['hit_rates']['terrain']['hits']} hits, {stats['hit_rates']['terrain']['misses']} misses)
+
+    Overall Hit Rate: {stats['overall_hit_rate']:.1f}%
+
+    Total Requests: {stats['total_hits'] + stats['total_misses']}
+    Total Cache Hits: {stats['total_hits']}
+    Total Cache Misses: {stats['total_misses']}
+    """
+        
+        QMessageBox.information(self, "Cache Statistics", msg)
+
+    def clear_all_caches(self):
+        """Clear all caches with confirmation"""
+        reply = QMessageBox.question(
+            self,
+            "Clear All Caches",
+            "This will clear all cached data. Cache will be rebuilt on next load.\n\nContinue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self.cache.clear_all_caches()
+            QMessageBox.information(self, "Success", "All caches cleared!")
+
+    def clear_disk_cache(self):
+        """Clear disk cache with confirmation"""
+        reply = QMessageBox.question(
+            self,
+            "Clear Disk Cache",
+            "This will clear all cached terrain images and temp files.\n\nContinue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self.cache.clear_disk_cache()
+            QMessageBox.information(self, "Success", "Disk cache cleared!")
+
+    def toggle_caching(self):
+        """Toggle caching on/off"""
+        if self.cache_enabled_action.isChecked():
+            self.cache.enable_caching()
+        else:
+            self.cache.disable_caching()
+
     def create_color_legend_item(self, layout, color, text):
         """Create a color sample with label for the legend - ENHANCED"""
         item_layout = QHBoxLayout()
@@ -727,10 +1244,14 @@ class SimplifiedMapEditor(QMainWindow):
             }}
         """)
         
-        # Create label with improved styling
+        # Create label with improved styling (color will be set by theme)
         label = QLabel(text)
         label.setFont(QFont("Arial", 10))
-        label.setStyleSheet("color: white; margin-left: 8px;")
+        label.setStyleSheet("margin-left: 8px;")
+        
+        # Store reference for theme updates
+        if hasattr(self, 'color_legend_labels'):
+            self.color_legend_labels.append(label)
         
         # Add to layout with label
         item_layout.addWidget(color_sample)
@@ -1023,24 +1544,6 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"Error loading sectordep data from {file_path}: {str(e)}")
             return False
     
-    def validate_worlds_folder(self, folder_path):
-        """Check if folder contains world data (XML files) - FIXED"""
-        if not os.path.exists(folder_path):
-            return False
-        
-        # Use the correct method name from your original code
-        world_files = self.find_xml_files_enhanced(folder_path)  # Changed from find_xml_files_enhanced
-        return len(world_files) > 0
-
-    def validate_levels_folder(self, folder_path):
-        """Check if folder contains level data (worldsectors) - FIXED"""
-        if not os.path.exists(folder_path):
-            return False
-        
-        # Use the correct method name from your original code
-        worldsectors_info = self.find_worldsectors_folder_enhanced(folder_path)
-        return worldsectors_info is not None
-
     def analyze_level_structure(self, base_folder):
         """
         Enhanced level structure analysis with better detection and debugging
@@ -1078,7 +1581,7 @@ class SimplifiedMapEditor(QMainWindow):
             common_levels = worlds_levels.intersection(levels_levels)
             all_levels = worlds_levels.union(levels_levels)
             
-            print(f"ðŸ“Š Found {len(worlds_levels)} worlds, {len(levels_levels)} levels, {len(common_levels)} complete")
+            print(f"Ã°Å¸â€œÅ  Found {len(worlds_levels)} worlds, {len(levels_levels)} levels, {len(common_levels)} complete")
             
             for level_name in sorted(all_levels):
                 worlds_path = os.path.join(worlds_folder, level_name) if level_name in worlds_levels else None
@@ -1113,7 +1616,7 @@ class SimplifiedMapEditor(QMainWindow):
                     level_data.append(level_info)
                     
                     status = "complete" if worlds_valid and levels_valid else "partial"
-                    print(f"   âž• Added {level_name} ({status})")
+                    print(f"   Ã¢Å¾â€¢ Added {level_name} ({status})")
                 else:
                     print(f"   Skipped {level_name} (no valid data)")
         
@@ -1138,18 +1641,18 @@ class SimplifiedMapEditor(QMainWindow):
                 level_data.append(level_info)
                 
                 status = "complete" if worlds_valid and levels_valid else "partial"
-                print(f"   âž• Added {level_name} ({status})")
+                print(f"   Ã¢Å¾â€¢ Added {level_name} ({status})")
             else:
                 print(f"   No valid level data found in direct folder")
         
-        print(f"ðŸŽ¯ Analysis complete: {len(level_data)} levels found")
+        print(f"Ã°Å¸Å½Â¯ Analysis complete: {len(level_data)} levels found")
         
         # DEBUG: Show what was found
         if level_data:
             print(f"\nDetected levels:")
             for i, level in enumerate(level_data, 1):
-                worlds_status = "âœ“" if level['worlds_path'] else "âŒ"
-                levels_status = "âœ“" if level['levels_path'] else "âŒ"
+                worlds_status = "Ã¢Å“â€œ" if level['worlds_path'] else "Ã¢ÂÅ’"
+                levels_status = "Ã¢Å“â€œ" if level['levels_path'] else "Ã¢ÂÅ’"
                 complete_status = "COMPLETE" if level['complete'] else "PARTIAL"
                 print(f"   {i}. {level['name']} - Worlds:{worlds_status} Levels:{levels_status} {complete_status}")
         
@@ -1191,14 +1694,14 @@ class SimplifiedMapEditor(QMainWindow):
             
             status_parts = []
             if level_info['worlds_path']:
-                status_parts.append("World Data âœ“")
+                status_parts.append("World Data Ã¢Å“â€œ")
             else:
-                status_parts.append("World Data âŒ")
+                status_parts.append("World Data Ã¢ÂÅ’")
                 
             if level_info['levels_path']:
-                status_parts.append("Level Objects âœ“")
+                status_parts.append("Level Objects Ã¢Å“â€œ")
             else:
-                status_parts.append("Level Objects âŒ")
+                status_parts.append("Level Objects Ã¢ÂÅ’")
             
             if level_info['complete']:
                 item_text += " [COMPLETE]"
@@ -1245,68 +1748,97 @@ class SimplifiedMapEditor(QMainWindow):
         dialog.exec()
 
     def reset_maps_and_ui(self):
-        """Reset map configuration and UI elements when loading a new level"""
-        print("Resetting maps and UI, Please wait.")
-        
+        """Reset map configuration, canvas, and terrain renderer when loading a new level"""
+        print("Resetting maps, UI, and terrain, please wait.")
+
         try:
-            # 1. Reset current map
+            # ---------------- 1. Reset current map ----------------
             self.current_map = None
-            
-            # 2. Reset grid configuration - create a fresh one
+
+            # ---------------- 2. Reset grid configuration ----------------
             self.grid_config = GridConfig(
                 sector_count_x=16,
                 sector_count_y=16,
                 sector_granularity=64,
                 maps=[]  # Clear all maps
             )
-            
-            # 3. Reset canvas map state if canvas exists
+
+            # ---------------- 3. Reset canvas state ----------------
             if hasattr(self, 'canvas'):
-                if hasattr(self.canvas, 'current_map'):
-                    self.canvas.current_map = None
-                if hasattr(self.canvas, 'grid_config'):
-                    self.canvas.grid_config = self.grid_config
-            
-            # 4. Reset map combo box if it exists
-            if hasattr(self, 'map_combo'):
-                self.map_combo.clear()
-                self.map_combo.addItem("No maps loaded")
-            
-            # 5. Clear any terrain/minimap data
-            if hasattr(self, 'canvas'):
-                if hasattr(self.canvas, 'minimap'):
-                    self.canvas.minimap = None
-                if hasattr(self.canvas, 'terrain_data'):
-                    self.canvas.terrain_data = None
-                if hasattr(self.canvas, 'heightmap'):
-                    self.canvas.heightmap = None
-                if hasattr(self.canvas, 'terrain_texture'):
-                    self.canvas.terrain_texture = None
-            
-            # 6. Reset sector boundary data
-            if hasattr(self, 'canvas'):
+                self.canvas.current_map = None
+                self.canvas.grid_config = self.grid_config
+
+                # Clear terrain/minimap data
+                for attr in ['minimap', 'terrain_data', 'heightmap', 'terrain_texture']:
+                    if hasattr(self.canvas, attr):
+                        setattr(self.canvas, attr, None)
+
+                # Reset sector boundary data
                 if hasattr(self.canvas, 'sector_data'):
                     self.canvas.sector_data = []
                 if hasattr(self.canvas, 'show_sector_boundaries'):
                     self.canvas.show_sector_boundaries = False
-            
-            print("Maps and UI reset complete")
-            
+
+            # ---------------- 4. Reset map combo box ----------------
+            if hasattr(self, 'map_combo'):
+                self.map_combo.clear()
+                self.map_combo.addItem("No maps loaded")
+
+            # ---------------- 5. Reset terrain renderer ----------------
+            if hasattr(self, 'terrain_viewer') and self.terrain_viewer:
+                # Recreate or reset terrain renderer
+                self.terrain_viewer.setParent(None)  # Remove old widget
+                self.terrain_viewer.deleteLater()
+                self.terrain_viewer = TerrainRenderer(parent=self)
+                if hasattr(self, 'terrain_dock') and self.terrain_dock:
+                    self.terrain_dock.setWidget(self.terrain_viewer)
+
+            print("Maps, UI, and terrain reset complete")
+
         except Exception as e:
-            print(f"Error during maps and UI reset: {e}")
+            print(f"Error during maps, UI, or terrain reset: {e}")
             import traceback
             traceback.print_exc()
 
     def parse_xml_file(self, file_path):
-        """Parse the XML file to extract entities - UPDATED with map reset"""
-        # Reset maps when parsing a new main XML file
-        print(f"Resetting maps before parsing new XML file: {os.path.basename(file_path)}")
+        """Parse the XML file to extract entities - WITH CACHING"""
         
-        # Only reset maps completely if this is a new main file load
-        # (not when loading additional files like omnis, managers, etc.)
+        # ============ CACHE INTEGRATION HERE ============
+        # Try to get cached parsed data first
+        cached_entities = self.cache.get_parsed_xml(file_path)
+        if cached_entities is not None:
+            print(f"âœ“ Using cached parse for {os.path.basename(file_path)} ({len(cached_entities)} entities)")
+            
+            # Use cached data
+            self.entities = cached_entities
+            
+            # Still need to set xml_tree for saving later
+            tree = ET.parse(file_path)
+            self.xml_tree = tree
+            
+            # Reset maps if needed
+            base_filename = os.path.basename(file_path)
+            if ".mapsdata.xml" in base_filename or "mapsdata.xml" == base_filename:
+                print("Main mapsdata file detected - performing full map reset")
+                self.reset_maps_and_ui()
+            
+            # Update UI
+            if hasattr(self, 'update_entity_statistics'):
+                self.update_entity_statistics()
+            if hasattr(self, 'entity_tree'):
+                self.update_entity_tree()
+            if hasattr(self, 'canvas'):
+                self.canvas.set_entities(self.entities)
+            
+            return  # Done - used cache!
+        # ============ END CACHE CHECK ============
+        
+        # Cache miss - parse normally
+        print(f"Parsing {os.path.basename(file_path)}...")
+        
+        # Reset maps when parsing a new main XML file
         base_filename = os.path.basename(file_path)
         if ".mapsdata.xml" in base_filename or "mapsdata.xml" == base_filename:
-            # This is the main file - do a full reset
             print("Main mapsdata file detected - performing full map reset")
             self.reset_maps_and_ui()
         
@@ -1376,6 +1908,11 @@ class SimplifiedMapEditor(QMainWindow):
         # Print summary
         print(f"Parsed {len(self.entities)} entities from {file_path}")
         
+        # ============ CACHE INTEGRATION HERE ============
+        # Cache the parsed entities for next time
+        self.cache.cache_parsed_xml(file_path, self.entities)
+        # ============ END CACHE INTEGRATION ============
+        
         # Update entity statistics if the method exists
         if hasattr(self, 'update_entity_statistics'):
             self.update_entity_statistics()
@@ -1387,13 +1924,6 @@ class SimplifiedMapEditor(QMainWindow):
         # Update canvas with new entities
         if hasattr(self, 'canvas'):
             self.canvas.set_entities(self.entities)
-        """
-        Enhanced level selection with better automatic detection and user choice - UPDATED with map reset
-        """
-        print(f"\n=== STARTING DUAL FOLDER LEVEL SELECTION ===")
-        
-        # RESET MAPS FIRST before any level selection
-        self.reset_maps_and_ui()
                                         
     def reset_entire_editor_state(self):
         """Comprehensive reset of the entire editor state when loading a new level"""
@@ -1462,6 +1992,7 @@ class SimplifiedMapEditor(QMainWindow):
                 self.map_combo.addItem("No maps loaded")
             
             # 5. CLEAR TERRAIN AND MINIMAP DATA
+            print("   Clearing terrain data, Please wait.")
             if hasattr(self.canvas, 'minimap'):
                 self.canvas.minimap = None
             if hasattr(self.canvas, 'terrain_data'):
@@ -1470,6 +2001,36 @@ class SimplifiedMapEditor(QMainWindow):
                 self.canvas.heightmap = None
             if hasattr(self.canvas, 'terrain_texture'):
                 self.canvas.terrain_texture = None
+            
+            
+            # Reset terrain renderer to clear all loaded terrain data
+            if hasattr(self.canvas, 'terrain_renderer'):
+                try:
+                    # Create a fresh terrain renderer instance
+                    self.canvas.terrain_renderer = TerrainRenderer()
+                    print("   Canvas terrain renderer reset")
+                except Exception as e:
+                    print(f"   Warning: Could not reset terrain renderer: {e}")
+            
+            # Reset editor-level terrain properties
+            self.sdat_path = None
+            
+            # Close and clear terrain viewer widget
+            if hasattr(self, 'terrain_viewer') and self.terrain_viewer is not None:
+                try:
+                    self.terrain_viewer.close()
+                    self.terrain_viewer = None
+                    print("   Terrain viewer closed")
+                except Exception as e:
+                    print(f"   Warning: Could not close terrain viewer: {e}")
+            
+            # Clear terrain dock widget
+            if hasattr(self, 'terrain_dock') and self.terrain_dock is not None:
+                try:
+                    self.terrain_dock.setWidget(None)
+                    print("   Terrain dock cleared")
+                except Exception as e:
+                    print(f"   Warning: Could not clear terrain dock: {e}")
             
             # 6. RESET SECTOR BOUNDARY DATA
             if hasattr(self.canvas, 'sector_data'):
@@ -1552,130 +2113,576 @@ class SimplifiedMapEditor(QMainWindow):
             traceback.print_exc()
 
     def select_level(self):
-        """
-        Two-step level selection: first worlds folder, then levels folder - WITH COMPREHENSIVE RESET
-        """
-        print(f"\n=== STARTING TWO-STEP LEVEL SELECTION ===")
-        
-        # COMPREHENSIVE RESET FIRST - before any level selection
-        self.reset_entire_editor_state()
-        
-        # Step 1: Select worlds folder
-        worlds_folder = QFileDialog.getExistingDirectory(
-            self,
-            "Step 1/2: Select WORLDS folder (contains XML files like mapsdata.xml)",
-            ""
-        )
-        
-        if not worlds_folder:
-            print("User cancelled worlds folder selection")
-            return
-        
-        print(f"Step 1 - Selected worlds folder: {worlds_folder}")
-        
-        # Validate worlds folder
-        worlds_valid = self.validate_worlds_folder(worlds_folder)
-        if not worlds_valid:
-            reply = QMessageBox.question(
-                self,
-                "Invalid Worlds Folder",
-                f"The selected folder doesn't contain valid world data (XML files).\n\n"
-                f"Folder: {os.path.basename(worlds_folder)}\n\n"
-                f"Continue anyway?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
+            """
+            Visual level selection using patch folder - ENHANCED VERSION
+            """
+            print(f"\n=== STARTING VISUAL LEVEL SELECTION ===")
             
-            if reply == QMessageBox.StandardButton.No:
-                return
-        
-        # Step 2: Select levels folder
-        levels_folder = QFileDialog.getExistingDirectory(
-            self,
-            f"Step 2/2: Select Levels folder (contains worldsectors)",
-            ""
-        )
-        
-        if not levels_folder:
-            # Ask if they want to continue with just worlds data
-            reply = QMessageBox.question(
-                self,
-                "No Levels Folder",
-                f"No levels folder selected.\n\n"
-                f"Continue loading only world data (entities from XML files)?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
+            # COMPREHENSIVE RESET FIRST
+            self.reset_entire_editor_state()
             
-            if reply == QMessageBox.StandardButton.Yes:
-                # Load only worlds data
-                level_info = {
-                    'name': os.path.basename(worlds_folder),
-                    'worlds_path': worlds_folder,
-                    'levels_path': None,
-                    'base_folder': os.path.dirname(worlds_folder)
-                }
-                self.load_complete_level(level_info)
-            return
-        
-        print(f"Step 2 - Selected levels folder: {levels_folder}")
-        
-        # Validate levels folder
-        levels_valid = self.validate_levels_folder(levels_folder)
-        if not levels_valid:
-            reply = QMessageBox.question(
-                self,
-                "Invalid Levels Folder",
-                f"The selected folder doesn't contain valid level data (worldsectors).\n\n"
-                f"Folder: {os.path.basename(levels_folder)}\n\n"
-                f"Continue anyway?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            
-            if reply == QMessageBox.StandardButton.No:
-                # Ask if they want to continue with just worlds data
-                reply2 = QMessageBox.question(
+            # Check if patch manager is configured
+            if not hasattr(self, 'patch_manager') or not self.patch_manager.is_configured():
+                print("Patch folder not configured, prompting user...")
+                reply = QMessageBox.question(
                     self,
-                    "Load Worlds Only?",
-                    f"Continue loading only world data from the worlds folder?",
+                    "Patch Folder Not Set",
+                    "No patch folder is configured. Would you like to set one now?\n\n"
+                    "The patch folder should contain 'worlds' and 'levels' subdirectories.",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
                 
-                if reply2 == QMessageBox.StandardButton.Yes:
-                    level_info = {
-                        'name': os.path.basename(worlds_folder),
-                        'worlds_path': worlds_folder,
-                        'levels_path': None,
-                        'base_folder': os.path.dirname(worlds_folder)
-                    }
-                    self.load_complete_level(level_info)
+                if reply == QMessageBox.StandardButton.Yes:
+                    if not self.patch_manager.set_patch_folder():
+                        print("User cancelled patch folder selection")
+                        return
+                    else:
+                        # Update worlds_folder after setting patch folder
+                        from set_patch_folder import update_worlds_folder
+                        update_worlds_folder(self.patch_manager, self)
+                else:
+                    print("User declined to set patch folder")
+                    return
+            
+            # Scan patch folder if levels_data is empty
+            if not self.patch_manager.levels_data:
+                print("No levels_data, scanning patch folder...")
+                
+                # Create enhanced progress dialog
+                from simplified_map_editor import EnhancedProgressDialog
+                
+                progress_dialog = EnhancedProgressDialog(
+                    "Scanning Patch Folder", 
+                    self, 
+                    game_mode=self.game_mode
+                )
+                progress_dialog.append_log(f"Scanning: {os.path.basename(self.patch_manager.patch_folder)}")
+                progress_dialog.show()
+                QApplication.processEvents()
+                
+                # Get file_converter
+                file_converter = self.file_converter if hasattr(self, 'file_converter') else None
+                
+                # Create scanner thread
+                from set_patch_folder import PatchFolderScanner
+                scanner_thread = PatchFolderScanner(self.patch_manager.patch_folder, file_converter)
+                self.patch_manager.scanner_thread = scanner_thread
+                
+                scan_completed = [False]
+                
+                def on_complete(levels_data):
+                    self.patch_manager.levels_data = levels_data or {}
+                    progress_dialog.set_progress(100)
+                    progress_dialog.append_log(f"âœ“ Scan complete: {len(self.patch_manager.levels_data)} levels found")
+                    progress_dialog.mark_complete()
+                    progress_dialog.stop_icon()
+                    progress_dialog.close()
+                    scan_completed[0] = True
+                    print(f"Scan complete: Found {len(self.patch_manager.levels_data)} levels")
+                
+                def on_error(msg):
+                    self.patch_manager.levels_data = {}
+                    progress_dialog.append_log(f"âœ— Error: {msg}")
+                    progress_dialog.mark_complete()
+                    progress_dialog.stop_icon()
+                    progress_dialog.close()
+                    scan_completed[0] = True
+                    print(f"Scan error: {msg}")
+                    QMessageBox.critical(self, "Scan Error", msg)
+                
+                def on_progress(percent, message):
+                    if progress_dialog.was_cancelled:
+                        return
+                    progress_dialog.set_progress(percent)
+                    progress_dialog.set_status(message)
+                    progress_dialog.append_log(message)
+                    QApplication.processEvents()
+                
+                scanner_thread.scan_complete.connect(on_complete)
+                scanner_thread.error_occurred.connect(on_error)
+                scanner_thread.progress_updated.connect(on_progress)
+                progress_dialog.cancelled.connect(scanner_thread.stop)
+                scanner_thread.start()
+                
+                # Wait for scan to complete
+                while not scan_completed[0]:
+                    QApplication.processEvents()
+                
+                print("Scan finished.")
+            
+            # Check if we have any levels after scan
+            if not self.patch_manager.levels_data:
+                print("ERROR: No levels found after scan")
+                QMessageBox.warning(
+                    self,
+                    "No Levels Found",
+                    "No valid levels were found in the patch folder.\n\n"
+                    f"Patch folder: {self.patch_manager.patch_folder}\n\n"
+                    "Please ensure your patch folder contains 'worlds' and/or 'levels' subdirectories."
+                )
                 return
+            
+            # Show the visual level selector dialog
+            print(f"Showing level selector dialog with {len(self.patch_manager.levels_data)} levels...")
+            
+            from set_patch_folder import LevelSelectorDialog
+            dialog = LevelSelectorDialog(
+                self.patch_manager.levels_data, 
+                self, 
+                self.game_mode, 
+                self.patch_manager
+            )
+            
+            def on_level_selected(level_dict):
+                print(f"Level selected: {level_dict.get('name')}")
+            
+            def on_patch_folder_change():
+                print("Patch folder change requested, restarting selection...")
+                from set_patch_folder import update_worlds_folder
+                update_worlds_folder(self.patch_manager, self)
+                self.patch_manager.levels_data = {}
+                dialog.close()
+                # Restart selection after a brief delay
+                QTimer.singleShot(100, self.select_level)
+            
+            dialog.level_selected.connect(on_level_selected)
+            dialog.patch_folder_change_requested.connect(on_patch_folder_change)
+            
+            # Execute dialog
+            result = dialog.exec()
+            print(f"Level selector result: {result}")
+            
+            if result == QDialog.DialogCode.Accepted and hasattr(dialog, 'selected_level') and dialog.selected_level:
+                level_dict = dialog.selected_level
+                print(f"Loading selected level: {level_dict.get('name')}")
+                
+                worlds_path = level_dict.get("worlds_path")
+                levels_path = level_dict.get("levels_path")
+                
+                # Validate paths - be lenient, allow partial data
+                worlds_valid = self.validate_worlds_folder(worlds_path) if worlds_path else True
+                levels_valid = self.validate_levels_folder(levels_path) if levels_path else True
+                
+                print(f"Validation: worlds={worlds_valid}, levels={levels_valid}")
+                
+                # Proceed if we have at least one valid path
+                if (worlds_path and worlds_valid) or (levels_path and levels_valid):
+                    print("Calling load_complete_level()...")
+                    self.load_complete_level(level_dict)  # â† FIXED: Removed '_with_progress'
+                else:
+                    print("ERROR: No valid paths in selected level")
+                    QMessageBox.warning(
+                        self,
+                        "Invalid Level",
+                        "The selected level has no valid world or level data.\n\n"
+                        f"Worlds path valid: {worlds_valid}\n"
+                        f"Levels path valid: {levels_valid}"
+                    )
+            else:
+                print("Level selection cancelled by user")
+
+    def load_complete_level(self, level_info):
+        """
+        Load both world and level data for a complete level with enhanced progress dialog.
+        All progress is consolidated into ONE dialog - no popup spam.
+        """
+        print(f"\n=== LOADING COMPLETE LEVEL: {level_info['name']} ===")
+
+        try:
+            # Create enhanced progress dialog - THE ONLY ONE
+            progress_dialog = EnhancedProgressDialog("Loading Complete Level", self, game_mode=self.game_mode)
+            
+            # Connect cancel signal
+            progress_dialog.cancelled.connect(
+                lambda: self.cancel_level_loading(progress_dialog)
+            )
+            
+            progress_dialog.show()
+            QApplication.processEvents()
+            
+            # Helper function for logging
+            def log(msg):
+                print(msg)
+                progress_dialog.append_log(msg)
+                QApplication.processEvents()
+            
+            # RESET
+            progress_dialog.set_status("Initializing level loading...")
+            progress_dialog.set_progress(5)
+            log(f"Loading level: {level_info['name']}")
+            QApplication.processEvents()
+            
+            self.entities = []
+            self.objects = []
+            self.selected_entity = None
+            
+            total_entities = 0
+            loaded_components = []
+            
+            if progress_dialog.was_cancelled:
+                progress_dialog.close()
+                return
+            
+            # Set worlds folder for 3D models
+            if level_info['worlds_path']:
+                self.worlds_folder = level_info['worlds_path']
+                log(f"Set worlds_folder for 3D models")
+                print(f"✅ Set worlds_folder for 3D models: {self.worlds_folder}")
+            
+            # Setup canvas for 3D
+            if level_info['worlds_path']:
+                if hasattr(self, 'canvas') and hasattr(self.canvas, 'setup_3d_models_for_level'):
+                    log("Setting up 3D models for level...")
+                    print(f"📦 Setting up 3D models for level...")
+                    self.canvas.setup_3d_models_for_level(level_info['worlds_path'])
+                elif hasattr(self, 'canvas'):
+                    print(f"⚠️ Canvas missing setup_3d_models_for_level method")
+                    self.canvas.main_window = self
+            
+            if progress_dialog.was_cancelled:
+                progress_dialog.close()
+                return
+            
+            # 1️⃣ Load World Data
+            if level_info['worlds_path']:
+                progress_dialog.set_status("Loading world data (XML files)...")
+                progress_dialog.set_progress(10)
+                log(f"Worlds folder: {os.path.basename(level_info['worlds_path'])}")
+                QApplication.processEvents()
+                
+                print(f"Loading world data from: {level_info['worlds_path']}")
+                
+                # Enhanced search for files
+                found_files = self.find_xml_files_enhanced(level_info['worlds_path'])
+                log(f"Found {len(found_files)} file types in worlds folder")
+                
+                if progress_dialog.was_cancelled:
+                    progress_dialog.close()
+                    return
+                
+                # Convert files if needed
+                progress_dialog.set_status("Converting FCB files to XML...")
+                progress_dialog.set_progress(20)
+                
+                def update_conversion_progress(progress, message=None):
+                    if progress_dialog.was_cancelled:
+                        return
+                    percent = int(20 + progress * 15)
+                    progress_dialog.set_progress(percent)
+                    if message:
+                        log(message)
+                    QApplication.processEvents()
+                
+                try:
+                    success_count, error_count, errors = self.file_converter.convert_folder(
+                        level_info['worlds_path'], 
+                        progress_callback=update_conversion_progress
+                    )
+                    log(f"Conversion: {success_count} successful, {error_count} failed")
+                    
+                    if error_count > 0:
+                        for error in errors[:2]:
+                            log(f"  Error: {error}")
+                            
+                except Exception as e:
+                    log(f"Conversion error: {str(e)}")
+                    print(f"Error during conversion: {str(e)}. Continuing...")
+                
+                if progress_dialog.was_cancelled:
+                    progress_dialog.close()
+                    return
+                
+                # Load XML files
+                progress_dialog.set_status("Loading XML files...")
+                progress_dialog.set_progress(35)
+                log("Processing XML files...")
+                QApplication.processEvents()
+                
+                loaded_files = []
+                
+                # Load mapsdata first
+                if "mapsdata" in found_files:
+                    self.xml_file_path = found_files["mapsdata"]["path"]
+                    self.parse_xml_file(self.xml_file_path)
+                    loaded_files.append(f"mapsdata ({len(self.entities)} entities)")
+                    log(f"Loaded mapsdata: {len(self.entities)} entities")
+                    total_entities += len(self.entities)
+                
+                if progress_dialog.was_cancelled:
+                    progress_dialog.close()
+                    return
+                
+                # Load other files
+                file_loaders = {
+                    "omnis": self.load_omnis_data,
+                    "managers": self.load_managers_data, 
+                    "sectorsdep": self.load_sectordep_data
+                }
+                
+                for file_key, loader_func in file_loaders.items():
+                    if progress_dialog.was_cancelled:
+                        progress_dialog.close()
+                        return
+                    
+                    if file_key in found_files:
+                        entity_count_before = len(self.entities)
+                        loader_func(found_files[file_key]["path"])
+                        entity_count_after = len(self.entities)
+                        new_entities = entity_count_after - entity_count_before
+                        loaded_files.append(f"{file_key} ({new_entities} entities)")
+                        log(f"Loaded {file_key}: {new_entities} entities")
+                
+                if loaded_files:
+                    loaded_components.append(f"World Data ({len(self.entities)} entities)")
+                    print(f"✓ Loaded {len(self.entities)} entities from world data")
+            
+            if progress_dialog.was_cancelled:
+                progress_dialog.close()
+                return
+            
+            # 2️⃣ Load Level Objects
+            if level_info['levels_path']:
+                progress_dialog.set_status("Loading level objects (worldsectors)...")
+                progress_dialog.set_progress(50)
+                log(f"Levels folder: {os.path.basename(level_info['levels_path'])}")
+                QApplication.processEvents()
+                
+                print(f"Loading level objects from: {level_info['levels_path']}")
+                
+                # Search for worldsectors
+                worldsectors_info = self.find_worldsectors_folder_enhanced(level_info['levels_path'])
+                
+                if worldsectors_info:
+                    log(f"Found worldsectors: {worldsectors_info['fcb_files']} FCB files")
+                    self.worldsectors_path = worldsectors_info["path"]
+                    
+                    # Look for sdat folder
+                    parent_dir = os.path.dirname(worldsectors_info["path"])
+                    sdat_candidate = os.path.join(parent_dir, "sdat")
+                    if os.path.isdir(sdat_candidate):
+                        self.sdat_path = sdat_candidate
+                        log("Found sdat folder for terrain data")
+                        print(f"Found sdat folder at: {self.sdat_path}")
+                    else:
+                        self.sdat_path = None
+                        log("No sdat folder found")
+                    
+                    if progress_dialog.was_cancelled:
+                        progress_dialog.close()
+                        return
+                    
+                    # Load objects with progress
+                    progress_dialog.set_status("Loading worldsector objects...")
+                    log("Processing worldsector files...")
+                    
+                    def on_progress(progress):
+                        if progress_dialog.was_cancelled:
+                            return
+                        percent = int(50 + progress * 20)
+                        progress_dialog.set_progress(percent)
+                        QApplication.processEvents()
+                    
+                    objects_success = self.load_level_objects_internal(
+                        level_info['levels_path'], 
+                        progress_dialog,
+                        on_progress
+                    )
+                    
+                    if objects_success:
+                        loaded_components.append(f"Level Objects ({len(self.objects)} objects)")
+                        total_entities += len(self.objects)
+                        log(f"Loaded {len(self.objects)} objects from worldsectors")
+                        print(f"✓ Loaded {len(self.objects)} objects from level data")
+                    else:
+                        log("No objects loaded from worldsectors")
+                        print("⚠ Failed to load level objects")
+                else:
+                    log("No worldsectors found in levels folder")
+            
+            if progress_dialog.was_cancelled:
+                progress_dialog.close()
+                return
+            
+            # 3️⃣ Setup 3D Models
+            progress_dialog.set_status("Configuring 3D model loader...")
+            progress_dialog.set_progress(70)
+            QApplication.processEvents()
+            
+            if hasattr(self, 'canvas') and hasattr(self.canvas, 'model_loader'):
+                log("Configuring 3D model loader...")
+                from canvas.game_paths_config import update_model_loader_for_game
+                update_model_loader_for_game(
+                    self.canvas.model_loader, 
+                    self.game_path_config
+                )
+                log("✓ Model loader configured")
+                
+                # Assign models with progress dialog
+                if hasattr(self, 'entities') and self.entities:
+                    progress_dialog.set_status("Assigning 3D models to entities...")
+                    progress_dialog.set_progress(72)
+                    log("Assigning 3D models to entities...")
+                    QApplication.processEvents()
+                    
+                    try:
+                        self.canvas.model_loader.assign_models_to_entities(
+                            self.entities,
+                            progress_dialog=progress_dialog,
+                            parent=self,
+                            game_mode=self.game_mode
+                        )
+                        log("✓ 3D models assigned")
+                    except Exception as e:
+                        log(f"⚠ Model assignment error: {str(e)}")
+                        print(f"Model assignment error: {e}")
+            
+            if progress_dialog.was_cancelled:
+                progress_dialog.close()
+                return
+            
+            # 4️⃣ Load Terrain
+            progress_dialog.set_status("Loading terrain data...")
+            progress_dialog.set_progress(80)
+            QApplication.processEvents()
+            
+            terrain_loaded = False
+            if hasattr(self, 'sdat_path') and self.sdat_path and hasattr(self.canvas, 'load_terrain'):
+                log(f"Loading terrain from sdat folder...")
+                print(f"Loading terrain from: {self.sdat_path}")
+                try:
+                    if self.canvas.load_terrain(self.sdat_path):
+                        terrain_loaded = True
+                        loaded_components.append("Terrain Data (Heightmap)")
+                        log("✓ Terrain loaded successfully")
+                        print("✓ Terrain loaded successfully")
+                    else:
+                        log("⚠ Terrain loading failed")
+                        print("⚠ Terrain loading failed")
+                except Exception as terrain_error:
+                    log(f"⚠ Error loading terrain: {str(terrain_error)}")
+                    print(f"⚠ Error loading terrain: {terrain_error}")
+            
+            if progress_dialog.was_cancelled:
+                progress_dialog.close()
+                return
+            
+            # 5️⃣ UI Finalization
+            progress_dialog.set_status("Updating display...")
+            progress_dialog.set_progress(90)
+            log("Finalizing UI...")
+            QApplication.processEvents()
+            
+            if hasattr(self, 'update_entity_statistics'):
+                self.update_entity_statistics()
+            self.canvas.set_entities(self.entities)
+            if hasattr(self, 'entity_tree'):
+                self.update_entity_tree()
+            self.reset_view()
+            
+            level_name = level_info['name']
+            if hasattr(self, 'level_info_label'):
+                self.level_info_label.setText(f"Loaded complete level: {level_name}")
+            elif hasattr(self, 'xml_file_label'):
+                self.xml_file_label.setText(f"Loaded complete level: {level_name}")
+            
+            self.status_bar.showMessage(f"Loaded {level_name}: {total_entities} total entities/objects")
+            
+            # Store level info
+            self.current_level_info = level_info
+            
+            # Complete
+            progress_dialog.set_progress(100)
+            log(f"✓ Level loading complete!")
+            progress_dialog.mark_complete()
+            progress_dialog.close()  # SPINNER AUTO-STOPS ON CLOSE
+            
+            # Summary popup
+            if loaded_components:
+                success_message = f"Successfully loaded level '{level_name}':\n\n"
+                success_message += "\n".join([f"• {c}" for c in loaded_components])
+                success_message += f"\n\nTotal entities/objects: {total_entities}"
+                QMessageBox.information(self, "Level Loaded Successfully", success_message)
+            else:
+                QMessageBox.warning(self, "No Data Loaded", f"No valid data found for level '{level_name}'")
+            
+            # Reset all modification flags
+            self.xml_tree_modified = False
+            self.omnis_tree_modified = False
+            self.managers_tree_modified = False
+            self.sectordep_tree_modified = False
+            self.entities_modified = False
+            if hasattr(self, 'worldsectors_modified'):
+                self.worldsectors_modified.clear()
+            
+            print(f"=== COMPLETE LEVEL LOADING FINISHED ===\n")
         
-        # Final confirmation and load
-        level_name = f"{os.path.basename(worlds_folder)} + {os.path.basename(levels_folder)}"
+        except Exception as e:
+            if 'progress_dialog' in locals():
+                progress_dialog.mark_complete()
+                progress_dialog.close()
+            QMessageBox.critical(self, "Error Loading Level", f"Failed to load level: {str(e)}")
+            print(f"✗ Error loading complete level: {e}")
+            import traceback
+            traceback.print_exc()
         
-        confirmation_message = f"Ready to load complete level:\n\n"
-        confirmation_message += f"Level Name: {level_name}\n"
-        confirmation_message += f"Worlds Folder: {os.path.basename(worlds_folder)}\n"
-        confirmation_message += f"Levels Folder: {os.path.basename(levels_folder)}\n"
-        confirmation_message += f"\nProceed with loading?"
-        
-        reply = QMessageBox.question(
-            self,
-            "Confirm Level Loading",
-            confirmation_message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            level_info = {
-                'name': level_name,
-                'worlds_path': worlds_folder,
-                'levels_path': levels_folder,
-                'base_folder': os.path.dirname(worlds_folder)
-            }
-            print(f"User confirmed, loading complete level...")
-            self.load_complete_level(level_info)
-        else:
-            print(f"User cancelled final confirmation")
+    def load_level_objects_internal(self, levels_path, progress_dialog=None, progress_callback=None):
+        """Internal method to load level objects without UI dialogs"""
+        try:
+            # Enhanced search for worldsectors
+            worldsectors_info = self.find_worldsectors_folder_enhanced(levels_path)
+            
+            if not worldsectors_info:
+                print(f"No worldsectors found in {levels_path}")
+                return False
+            
+            worldsectors_path = worldsectors_info["path"]
+            print(f"Found worldsectors at: {worldsectors_path}")
+            
+            # Store worldsectors path
+            self.worldsectors_path = worldsectors_path
+            
+            # Create and start loading thread
+            self.object_loading_thread = ObjectLoadingThread(
+                worldsectors_path, 
+                self.file_converter, 
+                self.grid_config
+            )
+            
+            # Connect signals
+            objects_loaded = []
+            
+            def on_objects_loaded(objects):
+                objects_loaded.extend(objects)
+            
+            def on_progress(progress):
+                if progress_callback:
+                    progress_callback(progress)
+            
+            def on_log_message(message):
+                if progress_dialog:
+                    progress_dialog.append_log(message)
+            
+            self.object_loading_thread.objects_loaded.connect(on_objects_loaded)
+            self.object_loading_thread.progress_updated.connect(on_progress)
+            
+            if hasattr(self.object_loading_thread, 'log_message'):
+                self.object_loading_thread.log_message.connect(on_log_message)
+            
+            # Run synchronously for this internal method
+            self.object_loading_thread.run()  # Use run() instead of start() for synchronous execution
+            
+            # Process loaded objects
+            if objects_loaded:
+                self.on_objects_loaded(objects_loaded)
+                print(f"Loaded {len(objects_loaded)} objects from level data")
+                return True
+            else:
+                print("No objects were loaded from level data")
+                return False
+            
+        except Exception as e:
+            print(f"Error loading level objects: {e}")
+            return False
 
     def load_level_folder(self):
         """Load a level folder with enhanced subfolder search - WITH COMPREHENSIVE RESET"""
@@ -1695,8 +2702,11 @@ class SimplifiedMapEditor(QMainWindow):
         try:
             print(f"Loading level from: {folder_path}")
             
+            # DEBUG: Check game mode before creating dialog
+            print(f"DEBUG: self.game_mode = '{self.game_mode}'")
+            
             # Create enhanced progress dialog
-            progress_dialog = EnhancedProgressDialog("Loading Level", self)
+            progress_dialog = EnhancedProgressDialog("Loading Level", self, game_mode=self.game_mode)
             
             # Connect cancel signal
             progress_dialog.cancelled.connect(
@@ -1714,6 +2724,16 @@ class SimplifiedMapEditor(QMainWindow):
             
             found_files = self.find_xml_files_enhanced(folder_path)
             progress_dialog.append_log(f"Found {len(found_files)} file types")
+            
+            # Setup EntityLibrary folder for 3D model lookups
+            if hasattr(self, 'canvas') and hasattr(self.canvas, 'model_loader'):
+                print(f"\n=== Setting up EntityLibrary for 3D models ===")
+                if self.canvas.model_loader.set_entity_library_folder(folder_path):
+                    print(f"✓ EntityLibrary configured for model lookups")
+                    progress_dialog.append_log("✓ EntityLibrary found for 3D models")
+                else:
+                    print(f"⚠ EntityLibrary not found (3D models will use fallback)")
+                    progress_dialog.append_log("⚠ No EntityLibrary (3D models disabled)")
             
             # Also search for worldsectors
             worldsectors_info = self.find_worldsectors_folder_enhanced(folder_path)
@@ -1946,6 +2966,16 @@ class SimplifiedMapEditor(QMainWindow):
         worldsectors_path = worldsectors_info["path"]
         print(f"Found worldsectors at: {worldsectors_path}")
         
+        # *** NEW: Look for sdat folder in the same parent directory ***
+        parent_dir = os.path.dirname(worldsectors_path)
+        sdat_candidate = os.path.join(parent_dir, "sdat")
+        if os.path.isdir(sdat_candidate):
+            self.sdat_path = sdat_candidate
+            print(f"Found sdat folder at: {self.sdat_path}")
+        else:
+            self.sdat_path = None
+            print("No sdat folder found (terrain data will not be available)")
+        
         # Check file counts
         total_files = worldsectors_info["fcb_files"] + worldsectors_info["xml_files"] + worldsectors_info["data_xml_files"]
         
@@ -1982,7 +3012,7 @@ class SimplifiedMapEditor(QMainWindow):
         self.worldsectors_path = worldsectors_path
         
         # Create enhanced progress dialog
-        progress_dialog = EnhancedProgressDialog("Loading Level Objects", self)
+        progress_dialog = EnhancedProgressDialog("Loading Level Objects", self, game_mode=self.game_mode)
         progress_dialog.show()
         QApplication.processEvents()
         
@@ -2051,20 +3081,19 @@ class SimplifiedMapEditor(QMainWindow):
         dialog.close()
 
     def on_object_loading_finished(self, result, progress_dialog):
-        """Handle when object loading is complete - UPDATED to always close dialog"""
-        # Mark as complete so closeEvent allows closing
+        """
+        Handle when object loading is complete and automatically load terrain if available.
+        """
         progress_dialog.mark_complete()
         progress_dialog.stop_icon()
         progress_dialog.close()
-        
-        # Only show results if not cancelled
+
         if not progress_dialog.was_cancelled:
-            # Show results
+            # Show conversion errors if any
             if result.conversion_errors:
                 error_msg = "\n".join(result.conversion_errors[:5])
                 if len(result.conversion_errors) > 5:
                     error_msg += f"\n... and {len(result.conversion_errors) - 5} more errors"
-                
                 QMessageBox.warning(
                     self,
                     "Loading Completed with Errors",
@@ -2077,271 +3106,201 @@ class SimplifiedMapEditor(QMainWindow):
                     "Objects Loaded Successfully",
                     f"Successfully loaded {result.loaded_objects} objects from {result.sectors_processed} sectors!"
                 )
-            
-            # Update status
+
+            # Update status bar
             self.status_bar.showMessage(
                 f"Loaded {len(self.entities)} entities and {len(self.objects)} objects"
             )
-            
-            # Reset view to show all content
+
+            # Reset view
             self.reset_view()
 
-    def load_world_data_internal(self, worlds_path, progress_dialog=None):
-        """Internal method to load world data without UI dialogs - SIMPLIFIED"""
+            # Auto-load terrain
+            if self.sdat_path:
+                try:
+                    print(f"Attempting to load terrain from: {self.sdat_path}")
+                    if not hasattr(self.canvas, 'terrain_renderer') or self.canvas.terrain_renderer is None:
+                        from canvas.terrain_renderer import TerrainRenderer
+                        self.canvas.terrain_renderer = TerrainRenderer()
+                        print(f"Initialized TerrainRenderer for game mode: {self.game_mode}")
+
+                    success = self.canvas.load_terrain(self.sdat_path)
+
+                    if success:
+                        print("Terrain loaded successfully into canvas!")
+
+                        if self.game_mode.lower() == "farcry2":
+                            tr = self.canvas.terrain_renderer
+                            center_x = (tr.terrain_world_min_x + tr.terrain_world_max_x) / 2
+                            center_y = (tr.terrain_world_min_y + tr.terrain_world_max_y) / 2
+
+                            if hasattr(self.canvas, "center_on_world"):
+                                self.canvas.center_on_world(center_x, center_y)
+                            else:
+                                self.canvas.viewport_offset_x = center_x
+                                self.canvas.viewport_offset_y = center_y
+
+                            print(f"[FC2] View centered on terrain at ({center_x}, {center_y})")
+                    else:
+                        print("Failed to load terrain data")
+
+                except Exception as e:
+                    print(f"Error loading terrain: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    QMessageBox.warning(
+                        self,
+                        "Terrain Loading Error",
+                        f"Could not load terrain:\n{str(e)}"
+                    )
+
+
+    def load_terrain_viewer(self):
+        """Load terrain data directly into the canvas"""
+        if not self.sdat_path:
+            print("No sdat path available, cannot load terrain")
+            return False
+
         try:
-            # Use the correct method name from your original code
+            print(f"Loading terrain data from: {self.sdat_path}")
+            success = self.canvas.load_terrain(self.sdat_path)
+
+            if success:
+                print("Terrain loaded successfully into canvas!")
+            else:
+                print("Failed to load terrain data")
+            return success
+
+        except Exception as e:
+            print(f"Error loading terrain: {e}")
+            import traceback
+            traceback.print_exc()
+            QMessageBox.warning(
+                self,
+                "Terrain Loading Error",
+                f"Could not load terrain:\n{str(e)}"
+            )
+            return False
+
+    def auto_load_terrain_if_available(self, base_path):
+        """Automatically search for and load terrain data from a base path"""
+        if not base_path or not os.path.isdir(base_path):
+            return False
+
+        print(f"Searching for terrain data in: {base_path}")
+
+        sdat_candidates = [
+            os.path.join(base_path, "sdat"),
+            os.path.join(os.path.dirname(base_path), "sdat"),
+            os.path.join(base_path, "levels", "sdat"),
+        ]
+
+        found_sdat = None
+        for candidate in sdat_candidates:
+            if os.path.isdir(candidate):
+                csdat_files = glob.glob(os.path.join(candidate, "*.csdat"))
+                sdat_files = glob.glob(os.path.join(candidate, "*.sdat"))
+                is_fc2 = self.game_mode.lower() == "farcry2"
+                if (is_fc2 and sdat_files) or (not is_fc2 and csdat_files):
+                    found_sdat = candidate
+                    print(f"Found terrain folder at: {found_sdat}")
+                    break
+
+        if not found_sdat:
+            print("No terrain folder with .csdat or .sdat files found")
+            return False
+
+        self.sdat_path = found_sdat
+        return self.load_terrain_viewer()
+
+    def load_world_data_internal(self, worlds_path, progress_dialog=None):
+        """Load world data WITHOUT EntityLibrary FCB conversion"""
+        try:
+            # 1️⃣ Find XML files in worlds_path
             found_files = self.find_xml_files_enhanced(worlds_path)
-            
             if not found_files:
                 print(f"No world XML files found in {worlds_path}")
                 return False
-            
-            # Convert files if needed
-            def update_progress(progress):
-                if progress_dialog:
-                    percent = int(10 + progress * 30)  # 10% to 40%
-                    progress_dialog.setValue(percent)
-                    progress_dialog.setLabelText(f"Converting world files, Please Wait. {percent}%")
-                    QApplication.processEvents()
-            
-            try:
-                success_count, error_count, errors = self.file_converter.convert_folder(
-                    worlds_path, 
-                    progress_callback=update_progress
-                )
-                print(f"World file conversion: {success_count} successful, {error_count} failed")
-            except Exception as e:
-                print(f"Error during world file conversion: {e}")
-            
-            # Load the found files
+
+            # ⚠️ EntityLibrary conversion removed entirely
+            print("Skipping EntityLibrary FCB conversion")
+
+            # 4️⃣ Setup EntityLibrary for 3D model lookups (folder/XML only)
+            if hasattr(self, 'canvas') and hasattr(self.canvas, 'model_loader'):
+                print(f"\n=== Setting up EntityLibrary for 3D models ===")
+
+                entity_library_fcb = os.path.join(worlds_path, "entitylibrary_full.fcb")
+                entity_lib_folder = entity_library_fcb + ".converted"
+                entity_lib_xml = entity_library_fcb + ".converted.xml"
+
+                success = False
+                if os.path.exists(entity_lib_folder) and os.path.isdir(entity_lib_folder):
+                    success = self.canvas.model_loader.set_entity_library_folder(worlds_path)
+                    print(f"✓ EntityLibrary folder used: {entity_lib_folder}")
+                elif os.path.exists(entity_lib_xml):
+                    success = self.canvas.model_loader.set_entity_library_xml(entity_lib_xml)
+                    print(f"✓ EntityLibrary merged XML used: {entity_lib_xml}")
+                else:
+                    print("⚠️ EntityLibrary not found (3D models disabled)")
+
+                if success:
+                    game_data_path = os.path.dirname(os.path.dirname(worlds_path))
+                    possible_model_paths = [
+                        os.path.join(game_data_path, "graphics", "_models"),
+                        os.path.join(game_data_path, "worlds", "graphics", "_models"),
+                        os.path.join(os.path.dirname(game_data_path), "graphics", "_models"),
+                    ]
+                    for models_path in possible_model_paths:
+                        if os.path.exists(models_path):
+                            gltf_count = len(list(Path(models_path).rglob('*.gltf')))
+                            self.canvas.model_loader.set_models_directory(models_path)
+                            print(f"✓ Models directory set: {models_path} ({gltf_count} GLTF files)")
+                            break
+
+                    possible_material_paths = [
+                        os.path.join(game_data_path, "graphics", "_materials"),
+                        os.path.join(game_data_path, "worlds", "graphics", "_materials"),
+                        os.path.join(os.path.dirname(game_data_path), "graphics", "_materials"),
+                    ]
+                    for materials_path in possible_material_paths:
+                        if os.path.exists(materials_path):
+                            self.canvas.model_loader.set_materials_directory(materials_path)
+                            print(f"✓ Materials directory set: {materials_path}")
+                            break
+
+                print(f"\n🔧 Re-assigning models to {len(self.entities)} entities...")
+                self.canvas.model_loader.assign_models_to_entities(self.entities)
+
+            else:
+                print("✗ Canvas or model_loader not available")
+
+            # 5️⃣ Load XML files into entities
             loaded_files = []
             entity_count_before = len(self.entities)
-            
-            # Load mapsdata first
+
             if "mapsdata" in found_files:
                 self.xml_file_path = found_files["mapsdata"]["path"]
                 self.parse_xml_file(self.xml_file_path)
                 loaded_files.append(f"mapsdata ({len(self.entities) - entity_count_before} entities)")
-            
-            # Load other files
+
             file_loaders = {
                 "omnis": self.load_omnis_data,
-                "managers": self.load_managers_data, 
+                "managers": self.load_managers_data,
                 "sectorsdep": self.load_sectordep_data
             }
-            
-            for file_key, loader_func in file_loaders.items():
-                if file_key in found_files:
+            for key, loader_func in file_loaders.items():
+                if key in found_files:
                     entity_count_before = len(self.entities)
-                    loader_func(found_files[file_key]["path"])
-                    new_entities = len(self.entities) - entity_count_before
-                    loaded_files.append(f"{file_key} ({new_entities} entities)")
-            
+                    loader_func(found_files[key]["path"])
+                    loaded_files.append(f"{key} ({len(self.entities) - entity_count_before} entities)")
+
             print(f"Loaded world files: {loaded_files}")
             return True
-            
+
         except Exception as e:
             print(f"Error loading world data: {e}")
-            return False
-
-    def load_complete_level(self, level_info):
-        """
-        Load both world and level data for a complete level - WITH COMPREHENSIVE RESET
-        
-        Args:
-            level_info (dict): Dictionary with level information
-        """
-        print(f"\n=== LOADING COMPLETE LEVEL: {level_info['name']} ===")
-        
-        # Create progress dialog
-        progress_dialog = QProgressDialog("Loading complete level, Please wait.", "Cancel", 0, 100, self)
-        progress_dialog.setWindowTitle(f"Loading {level_info['name']}")
-        progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        progress_dialog.setMinimumDuration(0)
-        progress_dialog.setValue(0)
-        
-        try:
-            # Reset current data (safety check)
-            self.entities = []
-            self.objects = []
-            self.selected_entity = None
-            
-            loaded_components = []
-            total_entities = 0
-            
-            # Step 1: Load world data (XML files) if available
-            if level_info['worlds_path']:
-                progress_dialog.setLabelText("Loading world data (XML files), Please wait.")
-                progress_dialog.setValue(10)
-                QApplication.processEvents()
-                
-                print(f"Loading world data from: {level_info['worlds_path']}")
-                
-                # Use existing load_level_folder logic
-                world_success = self.load_world_data_internal(level_info['worlds_path'], progress_dialog)
-                
-                if world_success:
-                    loaded_components.append(f"World Data ({len(self.entities)} entities)")
-                    total_entities += len(self.entities)
-                    print(f"Loaded {len(self.entities)} entities from world data")
-                else:
-                    print("Failed to load world data")
-            
-            # Step 2: Load level objects (worldsectors) if available
-            if level_info['levels_path']:
-                progress_dialog.setLabelText("Loading level objects (worldsectors), Please wait.")
-                progress_dialog.setValue(50)
-                QApplication.processEvents()
-                
-                print(f"Loading level objects from: {level_info['levels_path']}")
-                
-                # Use existing load_level_objects logic
-                objects_success = self.load_level_objects_internal(level_info['levels_path'], progress_dialog)
-                
-                if objects_success:
-                    loaded_components.append(f"Level Objects ({len(self.objects)} objects)")
-                    total_entities += len(self.objects)
-                    print(f"Loaded {len(self.objects)} objects from level data")
-                else:
-                    print("Failed to load level objects")
-            
-            # Step 3: Auto-load terrain if available
-            progress_dialog.setLabelText("Checking for terrain data, Please wait.")
-            progress_dialog.setValue(90)
-            QApplication.processEvents()
-            
-            # Check both paths for terrain
-            terrain_loaded = False
-            for path_key in ['worlds_path', 'levels_path']:
-                if level_info[path_key] and not terrain_loaded:
-                    if hasattr(self, 'auto_load_terrain_if_available'):
-                        terrain_loaded = self.auto_load_terrain_if_available(level_info[path_key])
-                        if terrain_loaded:
-                            loaded_components.append("Terrain Data")
-            
-            # Step 4: Finalize loading
-            progress_dialog.setLabelText("Finalizing, Please wait.")
-            progress_dialog.setValue(95)
-            QApplication.processEvents()
-            
-            # Update UI
-            if hasattr(self, 'update_entity_statistics'):
-                self.update_entity_statistics()
-            
-            self.canvas.set_entities(self.entities)
-            
-            if hasattr(self, 'entity_tree'):
-                self.update_entity_tree()
-            
-            self.reset_view()
-            
-            # Update labels - FIXED to check which label exists
-            level_name = level_info['name']
-            
-            # Try to update the appropriate label
-            if hasattr(self, 'level_info_label'):
-                # New enhanced UI
-                self.level_info_label.setText(f"Loaded complete level: {level_name}")
-            elif hasattr(self, 'xml_file_label'):
-                # Old UI
-                self.xml_file_label.setText(f"Loaded complete level: {level_name}")
-            else:
-                print(f"Loaded complete level: {level_name} (no UI label to update)")
-            
-            self.status_bar.showMessage(f"Loaded {level_name}: {total_entities} total entities/objects")
-            
-            progress_dialog.setValue(100)
-            progress_dialog.close()
-            
-            # Show success message
-            if loaded_components:
-                success_message = f"Successfully loaded level '{level_name}':\n\n"
-                success_message += "\n".join([f"{component}" for component in loaded_components])
-                success_message += f"\n\nTotal entities/objects: {total_entities}"
-                
-                QMessageBox.information(
-                    self,
-                    "Level Loaded Successfully",
-                    success_message
-                )
-            else:
-                QMessageBox.warning(
-                    self,
-                    "No Data Loaded",
-                    f"No valid data was found for level '{level_name}'."
-                )
-            
-            # Reset modification flags
-            self.xml_tree_modified = False
-            self.entities_modified = False
-            if hasattr(self, 'worldsectors_modified'):
-                self.worldsectors_modified.clear()
-            
-            print(f"=== COMPLETE LEVEL LOADING FINISHED ===\n")
-            
-        except Exception as e:
-            if 'progress_dialog' in locals():
-                progress_dialog.close()
-            QMessageBox.critical(
-                self, 
-                "Error Loading Level", 
-                f"Failed to load complete level: {str(e)}"
-            )
-            print(f"Error loading complete level: {e}")
             import traceback
             traceback.print_exc()
-
-    def load_level_objects_internal(self, levels_path, progress_dialog=None):
-        """Internal method to load level objects without UI dialogs"""
-        try:
-            # Enhanced search for worldsectors
-            worldsectors_info = self.find_worldsectors_folder_enhanced(levels_path)
-            
-            if not worldsectors_info:
-                print(f"No worldsectors found in {levels_path}")
-                return False
-            
-            worldsectors_path = worldsectors_info["path"]
-            print(f"Found worldsectors at: {worldsectors_path}")
-            
-            # Store worldsectors path
-            self.worldsectors_path = worldsectors_path
-            
-            # Create and start loading thread
-            self.object_loading_thread = ObjectLoadingThread(
-                worldsectors_path, 
-                self.file_converter, 
-                self.grid_config
-            )
-            
-            # Connect signals
-            objects_loaded = []
-            
-            def on_objects_loaded(objects):
-                objects_loaded.extend(objects)
-            
-            def on_progress(progress):
-                if progress_dialog:
-                    percent = int(50 + progress * 40)  # 50% to 90%
-                    progress_dialog.setValue(percent)
-            
-            self.object_loading_thread.objects_loaded.connect(on_objects_loaded)
-            self.object_loading_thread.progress_updated.connect(on_progress)
-            
-            # Run synchronously for this internal method
-            self.object_loading_thread.run()  # Use run() instead of start() for synchronous execution
-            
-            # Process loaded objects
-            if objects_loaded:
-                self.on_objects_loaded(objects_loaded)
-                print(f"Loaded {len(objects_loaded)} objects from level data")
-                return True
-            else:
-                print("No objects were loaded from level data")
-                return False
-            
-        except Exception as e:
-            print(f"Error loading level objects: {e}")
             return False
 
     def _save_and_convert_worldsectors(self):
@@ -2349,10 +3308,10 @@ class SimplifiedMapEditor(QMainWindow):
         if not hasattr(self, 'worldsectors_trees') or not self.worldsectors_trees:
             return 0
         
-        print(f"\nðŸ’¾ Starting improved WorldSectors save and conversion, Please wait.")
+        print(f"\nÃ°Å¸â€™Â¾ Starting improved WorldSectors save and conversion, Please wait.")
         
         # Step 1: Save all XML files first
-        print(f"ðŸ“ Step 1: Saving modified XML files, Please wait.")
+        print(f"Ã°Å¸â€œÂ Step 1: Saving modified XML files, Please wait.")
         saved_xml_files = []
         
         for xml_file_path, tree in self.worldsectors_trees.items():
@@ -2369,7 +3328,7 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"No XML files were saved")
             return 0
         
-        print(f"ðŸ“Š Saved {len(saved_xml_files)} XML files")
+        print(f"Ã°Å¸â€œÅ  Saved {len(saved_xml_files)} XML files")
         
         # Step 2: Use the improved conversion method
         print(f"\nStep 2: Converting files using improved method, Please wait.")
@@ -2387,7 +3346,7 @@ class SimplifiedMapEditor(QMainWindow):
         
         if success:
             # Step 3: Clean up worldsectors_trees for successfully converted files
-            print(f"\nðŸ§¹ Step 3: Cleaning up memory, Please wait.")
+            print(f"\nÃ°Å¸Â§Â¹ Step 3: Cleaning up memory, Please wait.")
             
             # Remove converted XML files from tracking
             xml_files_to_remove = []
@@ -2397,7 +3356,7 @@ class SimplifiedMapEditor(QMainWindow):
             
             for xml_file_path in xml_files_to_remove:
                 del self.worldsectors_trees[xml_file_path]
-                print(f"   ðŸ—‘ Removed from tracking: {os.path.basename(xml_file_path)}")
+                print(f"   Ã°Å¸â€”â€˜ Removed from tracking: {os.path.basename(xml_file_path)}")
             
             # Clear modification flags
             if hasattr(self, 'worldsectors_modified'):
@@ -2429,7 +3388,7 @@ class SimplifiedMapEditor(QMainWindow):
         
         try:
             # Create enhanced progress dialog
-            progress_dialog = EnhancedProgressDialog("Saving Level", self)
+            progress_dialog = EnhancedProgressDialog("Saving Level", self, game_mode=self.game_mode)
             progress_dialog.cancelled.connect(lambda: self.handle_save_cancel(progress_dialog))
             progress_dialog.show()
             QApplication.processEvents()
@@ -2527,7 +3486,7 @@ class SimplifiedMapEditor(QMainWindow):
 
     def save_all_xml_files_before_conversion(self):
         """Save all XML files before converting to FCB - CRITICAL STEP"""
-        print(f"\nðŸ’¾ STEP 1: Saving all XML files with current entity positions, Please wait.")
+        print(f"\nÃ°Å¸â€™Â¾ STEP 1: Saving all XML files with current entity positions, Please wait.")
         
         # 1. Save main XML files
         if hasattr(self, 'xml_tree') and self.xml_tree and hasattr(self, 'xml_file_path'):
@@ -2558,6 +3517,28 @@ class SimplifiedMapEditor(QMainWindow):
         
         # 3. CRITICAL: Save WorldSector .converted.xml files
         if hasattr(self, 'worldsectors_trees'):
+            # First, update all entity XML elements with current positions
+            print(f"   Updating entity positions in XML...")
+            updated_count = 0
+            for entity in self.entities:
+                if hasattr(entity, 'xml_element') and entity.xml_element is not None:
+                    # Check if this entity is from a WorldSector file
+                    source_file = getattr(entity, 'source_file', None)
+                    source_file_path = getattr(entity, 'source_file_path', None)
+                    is_worldsector = (source_file == 'worldsectors' or 
+                                    (source_file_path and 'worldsector' in source_file_path.lower()))
+                    
+                    if is_worldsector:
+                        # This is a WorldSector entity - update its XML
+                        if self._update_object_xml_position(entity):
+                            updated_count += 1
+            
+            if updated_count > 0:
+                print(f"   Updated {updated_count} entity positions in XML")
+            else:
+                print(f"   Warning: No entity XML positions were updated!")
+            
+            # Now save the WorldSector XML files
             for xml_file_path, tree in self.worldsectors_trees.items():
                 if xml_file_path.endswith('.converted.xml'):
                     try:
@@ -2580,7 +3561,7 @@ class SimplifiedMapEditor(QMainWindow):
                     except Exception as e:
                         print(f"   Failed to save WorldSector XML {os.path.basename(xml_file_path)}: {e}")
         
-        print(f"ðŸ’¾ XML save phase complete")
+        print(f"Ã°Å¸â€™Â¾ XML save phase complete")
 
     def _convert_worldsector_files_fixed(self, log_callback=None):
         """Convert WorldSector .converted.xml files back to .data.fcb - FIXED VERSION with logging"""
@@ -2720,7 +3701,7 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"Entity {entity_name} not found")
             return
         
-        print(f"ðŸ“ Entity position: ({target_entity.x:.1f}, {target_entity.y:.1f}, {target_entity.z:.1f})")
+        print(f"Ã°Å¸â€œÂ Entity position: ({target_entity.x:.1f}, {target_entity.y:.1f}, {target_entity.z:.1f})")
         print(f"Source file: {getattr(target_entity, 'source_file_path', 'None')}")
         
         # Check if source file exists and contains the entity
@@ -2771,7 +3752,7 @@ class SimplifiedMapEditor(QMainWindow):
                 fcb_size = os.path.getsize(fcb_file)
                 fcb_mtime = os.path.getmtime(fcb_file)
                 print(f"Corresponding FCB: {os.path.basename(fcb_file)} ({fcb_size} bytes)")
-                print(f"ðŸ“… FCB last modified: {fcb_mtime}")
+                print(f"Ã°Å¸â€œâ€¦ FCB last modified: {fcb_mtime}")
             else:
                 print(f"No corresponding FCB file found: {fcb_file}")
 
@@ -2850,7 +3831,7 @@ class SimplifiedMapEditor(QMainWindow):
                     failed_files.append(xml_file)
                     continue
                 
-                print(f"\nConverting: {os.path.basename(xml_file)} â†’ {os.path.basename(fcb_file)}")
+                print(f"\nConverting: {os.path.basename(xml_file)} Ã¢â€ â€™ {os.path.basename(fcb_file)}")
                 
                 # Check if XML file exists and has content
                 if not os.path.exists(xml_file):
@@ -2859,7 +3840,7 @@ class SimplifiedMapEditor(QMainWindow):
                     continue
                     
                 xml_size = os.path.getsize(xml_file)
-                print(f"  ðŸ“Š XML file size: {xml_size} bytes")
+                print(f"  Ã°Å¸â€œÅ  XML file size: {xml_size} bytes")
                 
                 if xml_size == 0:
                     print(f"XML file is empty")
@@ -2869,7 +3850,7 @@ class SimplifiedMapEditor(QMainWindow):
                 # Remove existing FCB file if it exists
                 if os.path.exists(fcb_file):
                     old_fcb_size = os.path.getsize(fcb_file)
-                    print(f"  ðŸ—‘ï¸ Removing old FCB file ({old_fcb_size} bytes)")
+                    print(f"  Ã°Å¸â€”â€˜Ã¯Â¸Â Removing old FCB file ({old_fcb_size} bytes)")
                     os.remove(fcb_file)
                 
                 # Convert using the file converter's method for .converted.xml files
@@ -2881,7 +3862,7 @@ class SimplifiedMapEditor(QMainWindow):
                     if os.path.exists(fcb_file):
                         fcb_size = os.path.getsize(fcb_file)
                         print(f"  Conversion successful!")
-                        print(f"  ðŸ“Š FCB file size: {fcb_size} bytes")
+                        print(f"  Ã°Å¸â€œÅ  FCB file size: {fcb_size} bytes")
                         converted_count += 1
                         
                         # Mark XML file for cleanup after all conversions are done
@@ -2895,7 +3876,7 @@ class SimplifiedMapEditor(QMainWindow):
                                 updated_entities += 1
                         
                         if updated_entities > 0:
-                            print(f"  ðŸ”— Updated {updated_entities} entity references")
+                            print(f"  Ã°Å¸â€â€” Updated {updated_entities} entity references")
                             
                     else:
                         print(f"  Conversion reported success but FCB file not created")
@@ -2910,11 +3891,11 @@ class SimplifiedMapEditor(QMainWindow):
         
         # Clean up successfully converted XML files
         if cleanup_files:
-            print(f"\nðŸ§¹ Cleaning up {len(cleanup_files)} successfully converted XML files, Please wait.")
+            print(f"\nÃ°Å¸Â§Â¹ Cleaning up {len(cleanup_files)} successfully converted XML files, Please wait.")
             for xml_file in cleanup_files:
                 try:
                     os.remove(xml_file)
-                    print(f"  ðŸ—‘ï¸ Removed: {os.path.basename(xml_file)}")
+                    print(f"  Ã°Å¸â€”â€˜Ã¯Â¸Â Removed: {os.path.basename(xml_file)}")
                 except Exception as cleanup_error:
                     print(f"  Could not remove {os.path.basename(xml_file)}: {cleanup_error}")
         
@@ -2926,14 +3907,14 @@ class SimplifiedMapEditor(QMainWindow):
             worldsectors_path = self.worldsectors_path
         
         if worldsectors_path:
-            print(f"\nðŸ§¹ Checking for leftover _new.fcb files, Please wait.")
+            print(f"\nÃ°Å¸Â§Â¹ Checking for leftover _new.fcb files, Please wait.")
             try:
                 for file in os.listdir(worldsectors_path):
                     if file.endswith('_new.fcb'):
                         leftover_path = os.path.join(worldsectors_path, file)
                         try:
                             os.remove(leftover_path)
-                            print(f"  ðŸ—‘ï¸ Removed leftover: {file}")
+                            print(f"  Ã°Å¸â€”â€˜Ã¯Â¸Â Removed leftover: {file}")
                         except Exception as e:
                             print(f"  Could not remove leftover {file}: {e}")
             except Exception as e:
@@ -2950,12 +3931,12 @@ class SimplifiedMapEditor(QMainWindow):
                 del self.worldsectors_trees[file_path]
             
             if trees_to_remove:
-                print(f"  ðŸ§¹ Cleared {len(trees_to_remove)} XML trees from memory")
+                print(f"  Ã°Å¸Â§Â¹ Cleared {len(trees_to_remove)} XML trees from memory")
         
         # Summary
-        print(f"\nðŸ“Š WorldSector conversion summary:")
+        print(f"\nÃ°Å¸â€œÅ  WorldSector conversion summary:")
         print(f"  Successfully converted: {converted_count}/{len(converted_xml_files)} files")
-        print(f"  ðŸ§¹ Cleaned up: {len(cleanup_files)} XML files")
+        print(f"  Ã°Å¸Â§Â¹ Cleaned up: {len(cleanup_files)} XML files")
         
         if failed_files:
             print(f"  Failed conversions: {len(failed_files)} files")
@@ -2983,7 +3964,7 @@ class SimplifiedMapEditor(QMainWindow):
                         modified_files.append(xml_file_path)
                         print(f"Saved: {os.path.basename(xml_file_path)}")
                     except Exception as e:
-                        print(f"âœ— Failed to save {xml_file_path}: {e}")
+                        print(f"Ã¢Å“â€” Failed to save {xml_file_path}: {e}")
             
             if not modified_files:
                 QMessageBox.information(self, "No Changes", "No modified WorldSectors files to save.")
@@ -3030,7 +4011,7 @@ class SimplifiedMapEditor(QMainWindow):
                                 
                     else:
                         failed_files.append(xml_file)
-                        print(f"âœ— Failed to convert: {os.path.basename(xml_file)}")
+                        print(f"Ã¢Å“â€” Failed to convert: {os.path.basename(xml_file)}")
             
             progress_dialog.setValue(100)
             progress_dialog.close()
@@ -3047,7 +4028,7 @@ class SimplifiedMapEditor(QMainWindow):
                             cleanup_files.append(xml_file)
                             print(f"Removed: {os.path.basename(xml_file)}")
                         except Exception as e:
-                            print(f"âš  Could not remove {xml_file}: {e}")
+                            print(f"Ã¢Å¡  Could not remove {xml_file}: {e}")
                 
                 # Clear worldsectors_trees for cleaned up files
                 for xml_file in cleanup_files:
@@ -3246,10 +4227,10 @@ class SimplifiedMapEditor(QMainWindow):
                         print(f"Converted and cleaned up: {os.path.basename(xml_file)}")
                     else:
                         error_count += 1
-                        print(f"âœ— FCB file not created: {os.path.basename(fcb_file)}")
+                        print(f"Ã¢Å“â€” FCB file not created: {os.path.basename(fcb_file)}")
                 else:
                     error_count += 1
-                    print(f"âœ— Conversion failed: {os.path.basename(xml_file)}")
+                    print(f"Ã¢Å“â€” Conversion failed: {os.path.basename(xml_file)}")
                     
             except Exception as e:
                 error_count += 1
@@ -3312,7 +4293,7 @@ class SimplifiedMapEditor(QMainWindow):
                     print(f"Converted to FCB: {os.path.basename(fcb_file)}")
                 else:
                     error_count += 1
-                    print(f"âœ— Failed to convert: {os.path.basename(xml_file)}")
+                    print(f"Ã¢Å“â€” Failed to convert: {os.path.basename(xml_file)}")
                     
             except Exception as e:
                 error_count += 1
@@ -3692,274 +4673,6 @@ class SimplifiedMapEditor(QMainWindow):
         # Perform the move
         return self.execute_sector_move(entity, current_file, target_file, sector_choice)
 
-    def copy_selected_entities(self):
-        """Copy selected entities to clipboard"""
-        if not hasattr(self, 'canvas') or not hasattr(self.canvas, 'selected'):
-            return False
-            
-        selected_entities = getattr(self.canvas, 'selected', [])
-        if not selected_entities:
-            self.status_bar.showMessage("No entities selected to copy")
-            return False
-        
-        # CRITICAL FIX: Check if entity_clipboard exists
-        if not hasattr(self, 'entity_clipboard'):
-            print("entity_clipboard not found!")
-            self.status_bar.showMessage("Copy/paste system not available")
-            return False
-        
-        success = self.entity_clipboard.copy_entities(selected_entities)
-        if success:
-            self.status_bar.showMessage(f"Copied {len(selected_entities)} entities to clipboard")
-        else:
-            self.status_bar.showMessage("Failed to copy entities")
-        
-        return success
-
-    def paste_entities(self, target_position=None, at_cursor=False):
-        """Paste entities using import methodology with automatic +20 X/Y offset or cursor position"""
-        # Calculate target position if pasting at cursor
-        if at_cursor and hasattr(self, 'canvas') and hasattr(self.canvas, 'last_mouse_world_pos'):
-            target_position = self.canvas.last_mouse_world_pos
-        
-        # CRITICAL FIX: Check if entity_clipboard exists and bind helper methods
-        if not hasattr(self, 'entity_clipboard'):
-            print("entity_clipboard not found!")
-            self.status_bar.showMessage("Copy/paste system not available")
-            return []
-        
-        # Bind the helper methods to the clipboard so it can access editor data
-        self.entity_clipboard._get_all_existing_entity_ids = lambda: self.get_all_existing_entity_ids()
-        self.entity_clipboard._get_all_existing_entity_names = lambda: self.get_all_existing_entity_names()
-        
-        # If no target position specified, apply automatic +20 X/Y offset
-        if target_position is None:
-            # Get clipboard data to calculate offset from first entity
-            clipboard_data = None
-            try:
-                from PyQt6.QtWidgets import QApplication
-                import json
-                
-                clipboard = QApplication.clipboard()
-                mime_data = clipboard.mimeData()
-                
-                if mime_data.hasFormat("application/x-avatar-entities-fcb"):
-                    json_string = mime_data.data("application/x-avatar-entities-fcb").data().decode()
-                    clipboard_data = json.loads(json_string)
-                elif mime_data.hasText():
-                    try:
-                        json_string = mime_data.text()
-                        clipboard_data = json.loads(json_string)
-                        if not (clipboard_data.get('type') in ['avatar_entities', 'avatar_entities_fcb'] and 'entities' in clipboard_data):
-                            clipboard_data = None
-                    except json.JSONDecodeError:
-                        clipboard_data = None
-                
-                if clipboard_data is None:
-                    clipboard_data = self.entity_clipboard.clipboard_data
-                
-                # Calculate automatic offset position
-                if clipboard_data and clipboard_data.get('entities'):
-                    first_entity = clipboard_data['entities'][0]
-                    target_position = (
-                        first_entity['x'] + 20,  # +20 on X axis
-                        first_entity['y'] + 20,  # +20 on Y axis  
-                        first_entity['z']        # Keep Z the same
-                    )
-                    print(f"Auto-offsetting paste by +20 X/Y: {target_position}")
-            except Exception as e:
-                print(f"Error calculating auto-offset: {e}")
-                target_position = None
-        
-        # Use import-style pasting
-        new_entities = self.entity_clipboard.paste_entities(
-            target_position=target_position,
-            id_generator=self.generate_new_entity_id,
-            name_generator=self.generate_unique_entity_name
-        )
-        
-        if not new_entities:
-            self.status_bar.showMessage("No entities to paste")
-            return []
-        
-        print(f"\n=== PASTING {len(new_entities)} ENTITIES ===")
-        
-        # Process each entity using import-style approach
-        successfully_added = []
-        for i, entity in enumerate(new_entities):
-            print(f"\nProcessing entity {i+1}: {entity.name}")
-            print(f"  Entity ID: {entity.id}")
-            print(f"  Position: ({entity.x}, {entity.y}, {entity.z})")
-            print(f"  Has XML element: {hasattr(entity, 'xml_element') and entity.xml_element is not None}")
-            
-            # Add to main entities list
-            self.entities.append(entity)
-            
-            # Add to worldsector XML using import methodology
-            if hasattr(entity, 'xml_element') and entity.xml_element is not None:
-                # Find target worldsector file (same logic as import system)
-                target_sector_file = self._find_best_worldsector_for_entity(entity)
-                
-                if target_sector_file:
-                    print(f"  Adding to worldsector: {os.path.basename(target_sector_file)}")
-                    
-                    # Use the same method as import system
-                    success = self._add_entity_xml_to_sector(entity.xml_element, target_sector_file)
-                    if success:
-                        entity.source_file_path = target_sector_file
-                        entity.source_file = "worldsectors"
-                        successfully_added.append(entity)
-                        print(f"  Successfully added to worldsector")
-                    else:
-                        print(f"  Failed to add to worldsector, but entity added to main list")
-                        successfully_added.append(entity)
-                else:
-                    print(f"  No suitable worldsector found, adding to main list only")
-                    successfully_added.append(entity)
-            else:
-                print(f"  Entity has no XML element, adding to main list only")
-                successfully_added.append(entity)
-        
-        # Update UI
-        self.canvas.set_entities(self.entities)
-        if hasattr(self, 'update_entity_tree'):
-            self.update_entity_tree()
-        
-        # Select the pasted entities
-        self.canvas.selected = new_entities
-        self.canvas.selected_entity = new_entities[0] if new_entities else None
-        self.selected_entity = self.canvas.selected_entity
-        
-        self.canvas.update()
-        if hasattr(self, 'update_ui_for_selected_entity'):
-            self.update_ui_for_selected_entity(self.selected_entity)
-        
-        self.status_bar.showMessage(f"Pasted {len(successfully_added)} entities")
-        print(f"=== PASTE COMPLETE: {len(successfully_added)} entities ===\n")
-        return new_entities
-
-    def _find_best_worldsector_for_entity(self, entity):
-        """Find the best worldsector file for an entity based on position"""
-        try:
-            x, y = entity.x, entity.y
-            print(f"Finding best worldsector for entity at ({x}, {y})")
-            
-            # Get all available worldsector files
-            available_files = []
-            
-            if hasattr(self, 'worldsectors_trees') and self.worldsectors_trees:
-                available_files = list(self.worldsectors_trees.keys())
-                print(f"Found {len(available_files)} loaded worldsector files")
-            
-            if not available_files:
-                print(f"No worldsector files available")
-                return None
-            
-            # Calculate which sector this entity should belong to based on position
-            # Assuming 64-unit sectors (standard for Avatar game)
-            sector_size = 64
-            sector_x = int(x // sector_size)
-            sector_y = int(y // sector_size)
-            
-            print(f"Entity should be in sector grid position: ({sector_x}, {sector_y})")
-            
-            # Try to find a matching sector file
-            import re
-            best_match = None
-            
-            for file_path in available_files:
-                # Try to extract sector ID from filename
-                match = re.search(r'worldsector(\d+)', file_path)
-                if match:
-                    sector_id = int(match.group(1))
-                    print(f"Checking sector {sector_id}: {os.path.basename(file_path)}")
-                    
-                    # For now, just use the first available sector
-                    # You can enhance this logic to match sector grid positions
-                    if best_match is None:
-                        best_match = file_path
-            
-            if best_match:
-                print(f"Selected worldsector: {os.path.basename(best_match)}")
-                return best_match
-            
-            # Fallback: use the first available file
-            fallback = available_files[0]
-            print(f"Using fallback worldsector: {os.path.basename(fallback)}")
-            return fallback
-            
-        except Exception as e:
-            print(f"Error finding worldsector for entity: {e}")
-            import traceback
-            traceback.print_exc()
-            return None
-
-    def _add_entity_xml_to_sector(self, entity_xml, sector_file_path):
-        """Add entity XML to a worldsector file"""
-        try:
-            print(f"\nAdding entity to sector: {os.path.basename(sector_file_path)}")
-            
-            # Load the sector file if not already loaded
-            if not hasattr(self, 'worldsectors_trees'):
-                self.worldsectors_trees = {}
-                print("Initialized worldsectors_trees")
-            
-            if sector_file_path not in self.worldsectors_trees:
-                print(f"Loading sector file: {os.path.basename(sector_file_path)}")
-                if os.path.exists(sector_file_path):
-                    import xml.etree.ElementTree as ET
-                    tree = ET.parse(sector_file_path)
-                    self.worldsectors_trees[sector_file_path] = tree
-                    print(f"Loaded sector file successfully")
-                else:
-                    print(f"Sector file does not exist: {sector_file_path}")
-                    return False
-            
-            tree = self.worldsectors_trees[sector_file_path]
-            root = tree.getroot()
-            
-            # Find ALL MissionLayers - there can be multiple
-            mission_layers = root.findall(".//object[@name='MissionLayer']")
-            if not mission_layers:
-                print(f"No MissionLayer found in {os.path.basename(sector_file_path)}")
-                return False
-            
-            print(f"Found {len(mission_layers)} MissionLayer(s)")
-            
-            # Use the first MissionLayer for adding
-            mission_layer = mission_layers[0]
-            
-            # Count existing entities
-            existing_entities = mission_layer.findall("object[@name='Entity']")
-            print(f"MissionLayer has {len(existing_entities)} existing entities")
-            
-            # Add entity XML to MissionLayer (make a deep copy to avoid reference issues)
-            import copy
-            entity_copy = copy.deepcopy(entity_xml)
-            mission_layer.append(entity_copy)
-            
-            # Verify addition
-            new_entity_count = len(mission_layer.findall("object[@name='Entity']"))
-            print(f"MissionLayer now has {new_entity_count} entities")
-            
-            # Save the file immediately
-            tree.write(sector_file_path, encoding='utf-8', xml_declaration=True)
-            print(f"Saved sector file: {os.path.basename(sector_file_path)}")
-            
-            # Mark as modified
-            if not hasattr(self, 'worldsectors_modified'):
-                self.worldsectors_modified = {}
-            self.worldsectors_modified[sector_file_path] = True
-            
-            print(f"Successfully added entity to sector")
-            return True
-            
-        except Exception as e:
-            print(f"Error adding entity to sector: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
-
     def show_entity_export_dialog(self):
         """Show the entity export dialog"""
         try:
@@ -4031,128 +4744,6 @@ class SimplifiedMapEditor(QMainWindow):
         
         print("=== END DEBUG ===\n")
 
-    def get_all_existing_entity_ids(self):
-        """Get all existing entity IDs from editor data"""
-        existing_ids = set()
-        
-        # Check main entities list
-        if hasattr(self, 'entities'):
-            for entity in self.entities:
-                try:
-                    entity_id = int(entity.id)
-                    existing_ids.add(entity_id)
-                except (ValueError, AttributeError):
-                    pass
-        
-        # Check worldsector XML trees for entity IDs
-        if hasattr(self, 'worldsectors_trees'):
-            for file_path, tree in self.worldsectors_trees.items():
-                try:
-                    root = tree.getroot()
-                    
-                    # FCBConverter format
-                    for id_field in root.findall(".//field[@name='disEntityId']"):
-                        id_value = id_field.get('value-Id64')
-                        if id_value:
-                            try:
-                                entity_id = int(id_value)
-                                existing_ids.add(entity_id)
-                            except ValueError:
-                                pass
-                    
-                    # Dunia Tools format
-                    for id_elem in root.findall(".//value[@name='disEntityId']"):
-                        if id_elem.text:
-                            try:
-                                entity_id = int(id_elem.text)
-                                existing_ids.add(entity_id)
-                            except ValueError:
-                                pass
-                                
-                except Exception as e:
-                    print(f"Error scanning {file_path} for entity IDs: {e}")
-        
-        print(f"Found {len(existing_ids)} existing entity IDs")
-        return existing_ids
-
-    def get_all_existing_entity_names(self):
-        """Get all existing entity names from editor data"""
-        existing_names = set()
-        
-        # Check main entities list
-        if hasattr(self, 'entities'):
-            for entity in self.entities:
-                if hasattr(entity, 'name') and entity.name:
-                    existing_names.add(entity.name)
-        
-        # Check worldsector XML trees for entity names
-        if hasattr(self, 'worldsectors_trees'):
-            for file_path, tree in self.worldsectors_trees.items():
-                try:
-                    root = tree.getroot()
-                    
-                    # FCBConverter format
-                    for name_field in root.findall(".//field[@name='hidName']"):
-                        name_value = name_field.get('value-String')
-                        if name_value:
-                            existing_names.add(name_value)
-                    
-                    # Dunia Tools format
-                    for name_elem in root.findall(".//value[@name='hidName']"):
-                        if name_elem.text:
-                            existing_names.add(name_elem.text)
-                            
-                except Exception as e:
-                    print(f"Error scanning {file_path} for entity names: {e}")
-        
-        print(f"Found {len(existing_names)} existing entity names")
-        return existing_names
-
-    def generate_new_entity_id(self):
-        """Generate a new unique entity ID"""
-        if not hasattr(self, 'next_entity_id'):
-            # Start from a high number to avoid conflicts with existing entities
-            self.next_entity_id = 3000000000000000000
-        
-        # Get all existing IDs to ensure uniqueness
-        existing_ids = self.get_all_existing_entity_ids()
-        
-        # Find next available ID
-        while self.next_entity_id in existing_ids:
-            self.next_entity_id += 1
-        
-        new_id = self.next_entity_id
-        self.next_entity_id += 1
-        
-        print(f"Generated new entity ID: {new_id}")
-        return str(new_id)
-
-    def generate_unique_entity_name(self, original_name):
-        """Generate a unique entity name"""
-        import re
-        import time
-        
-        # Get all existing names
-        existing_names = self.get_all_existing_entity_names()
-        
-        # Remove common prefixes that indicate copies
-        copy_pattern = r'^(.+?)(?:_Copy(?:_\d+)?)?$'
-        match = re.match(copy_pattern, original_name)
-        base_name = match.group(1) if match else original_name
-        
-        # Try with timestamp first
-        timestamp = int(time.time()) % 10000
-        new_name = f"{base_name}_Copy_{timestamp}"
-        
-        # If that exists, add a counter
-        counter = 1
-        while new_name in existing_names:
-            new_name = f"{base_name}_Copy_{timestamp}_{counter}"
-            counter += 1
-        
-        print(f"Generated unique name: {original_name} -> {new_name}")
-        return new_name
-
     def _add_entity_to_worldsector(self, entity):
         """Add entity to worldsector XML with smart sector assignment"""
         print(f"Smart worldsector assignment for: {entity.name}")
@@ -4169,7 +4760,7 @@ class SimplifiedMapEditor(QMainWindow):
         entity.source_file_path = target_file
         
         if old_source != target_file:
-            print(f"Reassigned entity from {old_source} â†’ {target_file}")
+            print(f"Reassigned entity from {old_source} Ã¢â€ â€™ {target_file}")
         
         # Load XML file on-demand if not already loaded
         if target_file not in self.worldsectors_trees:
@@ -4228,7 +4819,7 @@ class SimplifiedMapEditor(QMainWindow):
                 
                 # Save the XML file immediately
                 tree.write(target_file, encoding='utf-8', xml_declaration=True)
-                print(f"ðŸ’¾ Saved XML file with new entity")
+                print(f"Ã°Å¸â€™Â¾ Saved XML file with new entity")
                 
                 # Mark file as modified
                 if not hasattr(self, 'worldsectors_modified'):
@@ -4249,7 +4840,7 @@ class SimplifiedMapEditor(QMainWindow):
     def _find_target_worldsector_file(self, entity):
         """Find the best worldsector file for an entity using smart assignment"""
         x, y = entity.x, entity.y
-        print(f"ðŸŽ¯ Finding target worldsector for {entity.name} at ({x}, {y})")
+        print(f"Ã°Å¸Å½Â¯ Finding target worldsector for {entity.name} at ({x}, {y})")
         
         # Initialize worldsectors_trees if needed
         if not hasattr(self, 'worldsectors_trees'):
@@ -4257,7 +4848,7 @@ class SimplifiedMapEditor(QMainWindow):
         
         # Get all available worldsector files
         available_files = list(self.worldsectors_trees.keys()) if self.worldsectors_trees else []
-        print(f"ðŸ—‚ï¸  Available worldsector files: {len(available_files)}")
+        print(f"Ã°Å¸â€”â€šÃ¯Â¸Â  Available worldsector files: {len(available_files)}")
         
         if not available_files:
             print("No worldsector files loaded - cannot assign sector")
@@ -4298,173 +4889,12 @@ class SimplifiedMapEditor(QMainWindow):
             if sector_id > 99:  # Reasonable upper limit
                 sector_id = 99
                 
-            print(f"ðŸ§® Position ({x}, {y}) â†’ Sector X:{sector_x}, Y:{sector_y} â†’ ID:{sector_id}")
+            print(f"Ã°Å¸Â§Â® Position ({x}, {y}) Ã¢â€ â€™ Sector X:{sector_x}, Y:{sector_y} Ã¢â€ â€™ ID:{sector_id}")
             return sector_id
             
         except Exception as e:
             print(f"Error calculating sector from position: {e}")
             return None
-
-    def duplicate_selected_entities(self):
-        """Duplicate selected entities with +20 X/Y offset and unique names - UPDATED"""
-        if not hasattr(self, 'canvas') or not hasattr(self.canvas, 'selected'):
-            return False
-            
-        selected_entities = getattr(self.canvas, 'selected', [])
-        if not selected_entities:
-            self.status_bar.showMessage("No entities selected to duplicate")
-            return False
-        
-        # CRITICAL FIX: Check if entity_clipboard exists
-        if not hasattr(self, 'entity_clipboard'):
-            print("entity_clipboard not found!")
-            self.status_bar.showMessage("Copy/paste system not available")
-            return False
-        
-        print(f"\nDUPLICATING {len(selected_entities)} entities, Please wait.")
-        
-        # Copy to clipboard first
-        success = self.entity_clipboard.copy_entities(selected_entities)
-        if not success:
-            self.status_bar.showMessage("Failed to copy entities for duplication")
-            return False
-        
-        # Calculate offset position (+20 X/Y from first selected entity)
-        if selected_entities:
-            first_entity = selected_entities[0]
-            offset_position = (
-                first_entity.x + 20,  # +20 on X axis
-                first_entity.y + 20,  # +20 on Y axis
-                first_entity.z        # Keep Z the same
-            )
-            print(f"ðŸ“ Duplicating with +20 X/Y offset: {offset_position}")
-        else:
-            offset_position = None
-        
-        # CRITICAL FIX: Bind the helper methods to the clipboard so it can access editor data
-        self.entity_clipboard._get_all_existing_entity_ids = lambda: self.get_all_existing_entity_ids()
-        self.entity_clipboard._get_all_existing_entity_names = lambda: self.get_all_existing_entity_names()
-        
-        # Paste with offset using the enhanced method
-        new_entities = self.entity_clipboard.paste_entities(
-            target_position=offset_position,
-            id_generator=self.generate_new_entity_id,
-            name_generator=self.generate_unique_entity_name
-        )
-        
-        if not new_entities:
-            self.status_bar.showMessage("Failed to duplicate entities")
-            return False
-        
-        print(f"\n=== DUPLICATING {len(new_entities)} ENTITIES ===")
-        
-        # Add entities to main list and worldsector files
-        for i, entity in enumerate(new_entities):
-            print(f"\nProcessing duplicated entity {i+1}: {entity.name}")
-            
-            # Add to main entities list
-            self.entities.append(entity)
-            
-            # Add to appropriate worldsector XML if applicable
-            if hasattr(entity, 'source_file_path') and entity.source_file_path:
-                print(f"  Adding {entity.name} to worldsector XML")
-                self._add_entity_to_worldsector(entity)
-            else:
-                print(f"  Entity {entity.name} has no source_file_path - adding to main list only")
-        
-        # Update UI
-        self.canvas.set_entities(self.entities)
-        if hasattr(self, 'update_entity_tree'):
-            self.update_entity_tree()
-        
-        # Select the duplicated entities
-        self.canvas.selected = new_entities
-        self.canvas.selected_entity = new_entities[0] if new_entities else None
-        self.selected_entity = self.canvas.selected_entity
-        
-        self.canvas.update()
-        if hasattr(self, 'update_ui_for_selected_entity'):
-            self.update_ui_for_selected_entity(self.selected_entity)
-        
-        self.status_bar.showMessage(f"Duplicated {len(new_entities)} entities with +20 X/Y offset")
-        print(f"=== DUPLICATION COMPLETE ===\n")
-        return True
-
-    def delete_selected_entities(self):
-        """Delete selected entities from both memory and XML - FIXED VERSION"""
-        if not hasattr(self, 'canvas') or not hasattr(self.canvas, 'selected'):
-            return False
-            
-        selected_entities = getattr(self.canvas, 'selected', [])
-        if not selected_entities:
-            self.status_bar.showMessage("No entities selected to delete")
-            return False
-        
-        from PyQt6.QtWidgets import QMessageBox
-        
-        reply = QMessageBox.question(
-            self,
-            "Delete Entities",
-            f"Are you sure you want to delete {len(selected_entities)} entities?\n\n"
-            f"This will remove them from both the display and the XML files.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-        
-        if reply != QMessageBox.StandardButton.Yes:
-            return False
-        
-        print(f"\nðŸ—‘ï¸ DELETING {len(selected_entities)} entities, Please wait.")
-        
-        deleted_count = 0
-        
-        # Remove entities from worldsector XML trees and main entities list
-        for entity in selected_entities:
-            print(f"\nðŸ—‘ï¸ Processing deletion of: {entity.name}")
-            
-            # Remove from worldsector XML if applicable
-            if hasattr(entity, 'source_file_path') and entity.source_file_path:
-                if hasattr(self, 'worldsectors_trees') and entity.source_file_path in self.worldsectors_trees:
-                    print(f"  Removing from worldsector XML: {os.path.basename(entity.source_file_path)}")
-                    
-                    try:
-                        # CRITICAL FIX: Use the correct method name
-                        success = self.remove_entity_from_sector(entity, entity.source_file_path)
-                        if success:
-                            print(f"  Successfully removed from XML")
-                        else:
-                            print(f"  Failed to remove from XML, but continuing, Please wait.")
-                            
-                    except Exception as e:
-                        print(f"  Error removing from XML: {e}")
-                else:
-                    print(f"  WorldSector file not loaded: {entity.source_file_path}")
-            else:
-                print(f"  Entity is from main file, not worldsector")
-            
-            # Remove from main entities list
-            if entity in self.entities:
-                self.entities.remove(entity)
-                deleted_count += 1
-                print(f"  Removed from main entities list")
-            else:
-                print(f"  Entity not found in main entities list")
-        
-        # Clear selection
-        self.canvas.selected = []
-        self.canvas.selected_entity = None
-        self.selected_entity = None
-        
-        # Update UI
-        self.canvas.set_entities(self.entities)
-        if hasattr(self, 'update_entity_tree'):
-            self.update_entity_tree()
-        
-        self.canvas.update()
-        self.status_bar.showMessage(f"Deleted {deleted_count} entities from display and XML")
-        
-        print(f"ðŸ—‘ï¸ DELETION COMPLETE: {deleted_count} entities removed")
-        return True
 
     def toggle_sector_boundaries(self):
         """Toggle sector boundary visibility - FIXED VERSION"""
@@ -4520,9 +4950,9 @@ class SimplifiedMapEditor(QMainWindow):
             traceback.print_exc()
 
     def load_sector_data_for_canvas(self):
-        """Load sector data for the canvas from entities"""
+        """Load sector data for the canvas from entities - ENHANCED to include landmarks"""
         try:
-            print("Loading sector data from entities, Please wait.")
+            print("Loading sector data from entities and landmarks...")
             
             if not hasattr(self, 'entities') or not self.entities:
                 print("No entities available for sector data")
@@ -4531,14 +4961,182 @@ class SimplifiedMapEditor(QMainWindow):
             # Check if canvas has the method
             if hasattr(self.canvas, 'load_sector_data_from_entities'):
                 self.canvas.load_sector_data_from_entities()
+                
+                # ENHANCEMENT: Also add landmark sectors
+                self._add_landmark_sectors_to_data()
+                
                 return len(self.canvas.sector_data) > 0
             else:
                 # Fallback: create basic sector data from worldsector entities
-                print("Canvas missing load_sector_data_from_entities, using fallback")
-                return self.create_fallback_sector_data()
+                print("Canvas missing load_sector_data_from_entities, using enhanced fallback")
+                return self.create_enhanced_sector_data()
                 
         except Exception as e:
             print(f"Error loading sector data: {e}")
+            return False
+
+    def _add_landmark_sectors_to_data(self):
+        """Add landmark file sectors to sector_data"""
+        try:
+            if not hasattr(self, 'worldsectors_path') or not self.worldsectors_path:
+                return
+            
+            import glob
+            import re
+            
+            # Find all landmark files
+            landmark_pattern = os.path.join(self.worldsectors_path, "landmarkfar*.data.fcb.converted.xml")
+            landmark_files = glob.glob(landmark_pattern)
+            
+            if not landmark_files:
+                print("No landmark files found")
+                return
+            
+            print(f"Found {len(landmark_files)} landmark files")
+            
+            for landmark_file in landmark_files:
+                try:
+                    # Extract landmark ID from filename
+                    # Example: landmarkfar10.data.fcb.converted.xml -> 10
+                    match = re.search(r'landmarkfar(\d+)', os.path.basename(landmark_file))
+                    if not match:
+                        continue
+                    
+                    landmark_id = int(match.group(1))
+                    
+                    # Load the landmark XML to get sector position
+                    import xml.etree.ElementTree as ET
+                    tree = ET.parse(landmark_file)
+                    root = tree.getroot()
+                    
+                    # Find WorldSector element
+                    sector_x = None
+                    sector_y = None
+                    
+                    x_elem = root.find(".//field[@name='X']")
+                    if x_elem is not None:
+                        sector_x = int(x_elem.get('value-Int32', 0))
+                    
+                    y_elem = root.find(".//field[@name='Y']")
+                    if y_elem is not None:
+                        sector_y = int(y_elem.get('value-Int32', 0))
+                    
+                    if sector_x is None or sector_y is None:
+                        print(f"Could not get sector position from {os.path.basename(landmark_file)}")
+                        continue
+                    
+                    # Count entities in this landmark
+                    entities_in_landmark = []
+                    for entity in self.entities:
+                        source_file = getattr(entity, 'source_file_path', '')
+                        if f'landmarkfar{landmark_id}' in source_file:
+                            entities_in_landmark.append(entity)
+                    
+                    # Create sector info for this landmark
+                    sector_info = {
+                        'id': f"LM{landmark_id}",  # Mark as landmark
+                        'x': sector_x,
+                        'y': sector_y,
+                        'size': 64,
+                        'file_path': landmark_file,
+                        'entities': entities_in_landmark,
+                        'entity_count': len(entities_in_landmark),
+                        'is_landmark': True
+                    }
+                    
+                    # Add to sector_data if not already present
+                    if hasattr(self.canvas, 'sector_data'):
+                        # Check if this sector position already exists
+                        exists = False
+                        for existing_sector in self.canvas.sector_data:
+                            if (existing_sector.get('x') == sector_x and 
+                                existing_sector.get('y') == sector_y):
+                                exists = True
+                                # Merge entities
+                                existing_sector['entities'].extend(entities_in_landmark)
+                                existing_sector['entity_count'] += len(entities_in_landmark)
+                                print(f"Merged landmark {landmark_id} into existing sector at ({sector_x}, {sector_y})")
+                                break
+                        
+                        if not exists:
+                            self.canvas.sector_data.append(sector_info)
+                            print(f"Added landmark {landmark_id} as sector at ({sector_x}, {sector_y}) with {len(entities_in_landmark)} entities")
+                    
+                except Exception as e:
+                    print(f"Error processing landmark file {os.path.basename(landmark_file)}: {e}")
+            
+            print(f"Total sectors after adding landmarks: {len(self.canvas.sector_data)}")
+            
+        except Exception as e:
+            print(f"Error adding landmark sectors: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def create_enhanced_sector_data(self):
+        """Create enhanced sector data including landmarks"""
+        try:
+            sector_files = {}
+            
+            # Group entities by worldsector AND landmark files
+            for entity in self.entities:
+                source_file = getattr(entity, 'source_file_path', '')
+                if source_file and ('worldsector' in source_file.lower() or 'landmarkfar' in source_file.lower()):
+                    if source_file not in sector_files:
+                        sector_files[source_file] = []
+                    sector_files[source_file].append(entity)
+            
+            if not sector_files:
+                print("No worldsector or landmark entities found")
+                return False
+            
+            # Create sector data
+            self.canvas.sector_data = []
+            for source_file, entities in sector_files.items():
+                # Extract sector number or landmark ID
+                import re
+                
+                # Check if it's a landmark file
+                is_landmark = 'landmarkfar' in source_file.lower()
+                
+                if is_landmark:
+                    match = re.search(r'landmarkfar(\d+)', source_file.lower())
+                    sector_id = f"LM{match.group(1)}" if match else "LM?"
+                else:
+                    match = re.search(r'worldsector(\d+)', source_file.lower())
+                    sector_id = int(match.group(1)) if match else 0
+                
+                # Calculate sector bounds from entities
+                if entities:
+                    min_x = min(e.x for e in entities)
+                    max_x = max(e.x for e in entities)
+                    min_y = min(e.y for e in entities)
+                    max_y = max(e.y for e in entities)
+                    
+                    # Estimate sector grid position (64-unit sectors)
+                    center_x = (min_x + max_x) / 2
+                    center_y = (min_y + max_y) / 2
+                    sector_x = int(center_x // 64)
+                    sector_y = int(center_y // 64)
+                    
+                    sector_info = {
+                        'id': sector_id,
+                        'x': sector_x,
+                        'y': sector_y,
+                        'size': 64,
+                        'file_path': source_file,
+                        'entities': entities,
+                        'entity_count': len(entities),
+                        'is_landmark': is_landmark
+                    }
+                    
+                    self.canvas.sector_data.append(sector_info)
+                    print(f"Added {'landmark' if is_landmark else 'sector'} {sector_id} with {len(entities)} entities")
+            
+            print(f"Created enhanced sector data: {len(self.canvas.sector_data)} sectors (including landmarks)")
+            return len(self.canvas.sector_data) > 0
+            
+        except Exception as e:
+            print(f"Error creating enhanced sector data: {e}")
             return False
 
     def create_fallback_sector_data(self):
@@ -4658,7 +5256,7 @@ class SimplifiedMapEditor(QMainWindow):
                 QMessageBox.information(
                     self,
                     "No Violations Found",
-                    "All entities are within their sector boundaries! âœ…"
+                    "All entities are within their sector boundaries! Ã¢Å“â€¦"
                 )
                 
         except Exception as e:
@@ -4839,7 +5437,7 @@ class SimplifiedMapEditor(QMainWindow):
                 return False
             
             # Remove the entity from the correct MissionLayer
-            print(f"ðŸ—‘ï¸ Removing entity from MissionLayer")
+            print(f"Ã°Å¸â€”â€˜Ã¯Â¸Â Removing entity from MissionLayer")
             source_mission_layer.remove(entity_to_remove)
             
             # Verify removal
@@ -4850,7 +5448,7 @@ class SimplifiedMapEditor(QMainWindow):
             
             # Save immediately
             tree.write(source_file, encoding='utf-8', xml_declaration=True)
-            print(f"ðŸ’¾ Saved {os.path.basename(source_file)}")
+            print(f"Ã°Å¸â€™Â¾ Saved {os.path.basename(source_file)}")
             
             # Mark file as modified
             if not hasattr(self, 'worldsectors_modified'):
@@ -4970,7 +5568,7 @@ class SimplifiedMapEditor(QMainWindow):
                 return False
             
             # Remove the entity from the correct MissionLayer
-            print(f"ðŸ—‘ï¸ Removing entity from MissionLayer")
+            print(f"Ã°Å¸â€”â€˜Ã¯Â¸Â Removing entity from MissionLayer")
             source_mission_layer.remove(entity_to_remove)
             
             # Verify removal
@@ -4981,7 +5579,7 @@ class SimplifiedMapEditor(QMainWindow):
             
             # Save immediately
             tree.write(source_file, encoding='utf-8', xml_declaration=True)
-            print(f"ðŸ’¾ Saved {os.path.basename(source_file)}")
+            print(f"Ã°Å¸â€™Â¾ Saved {os.path.basename(source_file)}")
             
             return True
             
@@ -5053,14 +5651,14 @@ class SimplifiedMapEditor(QMainWindow):
             new_entities = mission_layer.findall("object[@name='Entity']")
             if len(new_entities) > len(existing_entities):
                 print(f"Successfully added {entity.name} to {os.path.basename(target_file)}")
-                print(f"ðŸ“Š MissionLayer now has {len(new_entities)} entities")
+                print(f"Ã°Å¸â€œÅ  MissionLayer now has {len(new_entities)} entities")
                 
                 # Update entity's XML reference
                 entity.xml_element = fresh_element
                 
                 # Save immediately
                 tree.write(target_file, encoding='utf-8', xml_declaration=True)
-                print(f"ðŸ’¾ Saved {os.path.basename(target_file)}")
+                print(f"Ã°Å¸â€™Â¾ Saved {os.path.basename(target_file)}")
                 
                 # Mark file as modified
                 if not hasattr(self, 'worldsectors_modified'):
@@ -5081,7 +5679,7 @@ class SimplifiedMapEditor(QMainWindow):
     def execute_sector_move(self, entity, current_file, target_file, target_sector):
         """Execute the actual sector move operation - FIXED for FCBConverter format"""
         try:
-            print(f"\nðŸšš Executing sector move for {entity.name}")
+            print(f"\nÃ°Å¸Å¡Å¡ Executing sector move for {entity.name}")
             print(f"From: {current_file}")
             print(f"To: {target_file}")
             
@@ -5321,37 +5919,6 @@ class SimplifiedMapEditor(QMainWindow):
         
         return None
 
-    def setup_ui(self):
-        """Initialize the UI components - UPDATED with terrain support"""
-        # Create central widget
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
-        # Create main layout
-        main_layout = QVBoxLayout(central_widget)
-        
-        # Create menu bar
-        self.create_menus()
-        
-        # Create toolbar
-        self.create_toolbar()
-        
-        # Create canvas for editing
-        self.canvas = MapCanvas(self)
-        main_layout.addWidget(self.canvas)
-        
-        # Create status bar
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Ready")
-        
-        # CRITICAL: Make sure these are called
-        self.create_side_panel()  # â† This should be here
-        self.create_entity_browser()  # â† And this
-                
-        # Connect entity selection signal from canvas to handler
-        self.canvas.entitySelected.connect(self.on_entity_selected)
-
     def create_entity_browser(self):
         """Create a dock widget for browsing and organizing entities"""
         # Create dock widget
@@ -5391,7 +5958,7 @@ class SimplifiedMapEditor(QMainWindow):
         self.entity_tree.setHeaderLabels(["Name", "ID", "Position"])
         self.entity_tree.setColumnWidth(0, 180)
         self.entity_tree.setColumnWidth(1, 80)
-        self.entity_tree.setAlternatingRowColors(True)
+        self.entity_tree.setAlternatingRowColors(False)
         self.entity_tree.setSelectionMode(QTreeWidget.SelectionMode.ExtendedSelection)
         self.entity_tree.itemSelectionChanged.connect(self.on_entity_tree_selection_changed)
         dock_layout.addWidget(self.entity_tree)
@@ -5450,7 +6017,7 @@ class SimplifiedMapEditor(QMainWindow):
         self.entity_tree.itemDoubleClicked.connect(self.on_entity_tree_double_clicked)
 
     def on_entity_tree_selection_changed(self):
-        """Handle selection change in the entity tree - FIXED to update gizmo"""
+        """Handle selection change in the entity tree - FIXED to fully select entity like grid selection"""
         # Get selected items
         selected_items = self.entity_tree.selectedItems()
         
@@ -5479,32 +6046,27 @@ class SimplifiedMapEditor(QMainWindow):
             self.canvas.update()
             return
         
-        # Set canvas selection
+        # CRITICAL FIX: Use the same handler as grid selection to ensure full selection
+        # This ensures the entity is fully selected for the entity editor (Ctrl+E)
+        primary_entity = selected_entities[0]
+        
+        # Print which entity was selected from the browser
+        print(f"Entity Browser: Selected '{primary_entity.name}' (ID: {primary_entity.id})")
+        
+        # Set canvas selection for multiple selection support
         if hasattr(self.canvas, 'selected'):
             self.canvas.selected = selected_entities
         
-        # Set primary selected entity
-        self.selected_entity = selected_entities[0]
-        if hasattr(self.canvas, 'selected_entity'):
-            self.canvas.selected_entity = self.selected_entity
+        # Call the same handler as grid selection to ensure consistent behavior
+        # This ensures the entity is fully recognized by entity editor and all systems
+        self.on_entity_selected(primary_entity)
         
-        # CRITICAL FIX: Update gizmo for the selected entity
-        if hasattr(self.canvas, 'gizmo_renderer') and self.selected_entity:
-            print(f"ðŸŽ¯ Updating gizmo for selected entity: {self.selected_entity.name}")
-            self.canvas.gizmo_renderer.update_gizmo_for_entity(self.selected_entity)
-        
-        # Update UI
-        self.update_ui_for_selected_entity(self.selected_entity)
-        
-        # Update canvas
-        self.canvas.update()
-        
-        # If gizmo is available, position it for multiple entities
-        if hasattr(self.canvas, 'gizmo_renderer') and not self.canvas.gizmo_renderer.rotation_gizmo.hidden:
-            # For multiple selection, keep gizmo on the first entity
-            if len(selected_entities) > 1:
-                print(f"ðŸŽ¯ Multiple entities selected ({len(selected_entities)}), gizmo on: {self.selected_entity.name}")
-
+        # If multiple selection, also update canvas.selected list
+        if len(selected_entities) > 1:
+            if hasattr(self.canvas, 'selected'):
+                self.canvas.selected = selected_entities
+            print(f"Multiple entities selected ({len(selected_entities)}), primary: {primary_entity.name}")
+            
     def on_entity_tree_double_clicked(self, item, column):
         """Enhanced double-click handler that shows gizmo and centers view"""
         # Get the entity
@@ -5512,7 +6074,7 @@ class SimplifiedMapEditor(QMainWindow):
         if not entity:
             return
         
-        print(f"ðŸŽ¯ Double-clicked entity: {entity.name}")
+        print(f"Ã°Å¸Å½Â¯ Double-clicked entity: {entity.name}")
         
         # Select the entity
         self.selected_entity = entity
@@ -5521,7 +6083,7 @@ class SimplifiedMapEditor(QMainWindow):
         
         # CRITICAL: Update gizmo for double-clicked entity
         if hasattr(self.canvas, 'gizmo_renderer'):
-            print(f"ðŸŽ¯ Double-click: Updating gizmo for {entity.name}")
+            print(f"Ã°Å¸Å½Â¯ Double-click: Updating gizmo for {entity.name}")
             self.canvas.gizmo_renderer.update_gizmo_for_entity(entity)
         
         # Update UI
@@ -5546,15 +6108,18 @@ class SimplifiedMapEditor(QMainWindow):
         print(f"Double-click complete: Entity {entity.name} selected with gizmo visible")
 
     def zoom_to_entity(self, entity):
-        """Zoom and center view on the specified entity - SIMPLIFIED for 2D only"""
-        print("zoom_to_entity called")
+        """Zoom and center view on the specified entity - WORKS IN 2D AND 3D"""
+        print(f"zoom_to_entity called for: {entity.name if entity else 'None'}")
+        
         if not entity:
             print("No entity provided!")
             return
             
         print(f"Zooming to entity: {entity.name}")
+        print(f"Entity position: ({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
         print(f"Entity map: {entity.map_name}")
         print(f"Current map: {self.current_map.name if self.current_map else 'None'}")
+        print(f"Current mode: {'2D' if self.canvas.mode == 0 else '3D'}")
             
         # Check if entity is in current map
         if self.current_map is not None and entity.map_name != self.current_map.name:
@@ -5569,18 +6134,76 @@ class SimplifiedMapEditor(QMainWindow):
             else:
                 print("Could not find matching map in combo box")
         
-        # Zoom to the entity in 2D mode
-        print("Using 2D zoom...")
-        if hasattr(self.canvas, 'zoom_to_entity_2d'):
-            self.canvas.zoom_to_entity_2d(entity)
-        else:
-            print("ERROR: zoom_to_entity_2d method not found on canvas!")
-            # Fallback: basic 2D zoom implementation
-            self.canvas.selected_entity = entity
-            self.canvas.selected = [entity]
-            self.canvas.offset_x = (self.canvas.width() / 2) - (entity.x * self.canvas.scale_factor)
-            self.canvas.offset_y = (self.canvas.height() / 2) - (entity.y * self.canvas.scale_factor)
+        # Zoom based on current mode
+        if self.canvas.mode == 0:  # 2D mode
+            print("Using 2D zoom...")
+            
+            # Use canvas zoom method if available
+            if hasattr(self.canvas, 'zoom_to_entity'):
+                self.canvas.zoom_to_entity(entity)
+            else:
+                # Fallback: manual 2D positioning
+                print("Using fallback 2D zoom")
+                self.canvas.selected_entity = entity
+                self.canvas.selected = [entity]
+                
+                # Center on entity
+                self.canvas.offset_x = (self.canvas.width() / 2) - (entity.x * self.canvas.scale_factor)
+                self.canvas.offset_y = (self.canvas.height() / 2) - (entity.y * self.canvas.scale_factor)
+                
+                # Set a reasonable zoom level
+                self.canvas.scale_factor = max(self.canvas.scale_factor, 1.0)
+                
+                self.canvas.update()
+                
+            print(f"2D zoom complete: offset=({self.canvas.offset_x:.1f}, {self.canvas.offset_y:.1f}), "
+                f"scale={self.canvas.scale_factor:.2f}")
+            
+        else:  # 3D mode
+            print("Using 3D camera positioning...")
+            
+            import numpy as np
+            
+            # Calculate camera position relative to entity
+            # Position camera behind and above the entity for a good view
+            camera_offset_distance = 100.0  # Distance from entity
+            camera_height_offset = 50.0     # Height above entity
+            
+            # Position camera behind entity (negative X direction)
+            camera_x = entity.x - camera_offset_distance
+            camera_y = entity.z + camera_height_offset  # Z is height in game coordinates
+            camera_z = entity.y  # Y maps to Z in OpenGL
+            
+            self.canvas.camera_3d.position = np.array([camera_x, camera_y, camera_z], dtype=float)
+            
+            # Calculate yaw to look at entity
+            dx = entity.x - camera_x
+            dy = entity.y - camera_z
+            self.canvas.camera_3d.yaw = np.degrees(np.arctan2(dy, dx))
+            
+            # Set pitch to look slightly down at entity
+            dz = entity.z - camera_y
+            horizontal_dist = np.sqrt(dx*dx + dy*dy)
+            if horizontal_dist > 0:
+                self.canvas.camera_3d.pitch = np.degrees(np.arctan2(-dz, horizontal_dist))
+            else:
+                self.canvas.camera_3d.pitch = -20.0
+            
+            # Clamp pitch
+            self.canvas.camera_3d.pitch = np.clip(self.canvas.camera_3d.pitch, -89, 89)
+            
+            # Update camera vectors
+            self.canvas.camera_3d.update_vectors()
+            
+            # Update canvas
             self.canvas.update()
+            
+            print(f"3D camera positioned at ({camera_x:.0f}, {camera_y:.0f}, {camera_z:.0f})")
+            print(f"Looking at entity: yaw={self.canvas.camera_3d.yaw:.1f}°, "
+                f"pitch={self.canvas.camera_3d.pitch:.1f}°")
+            
+            # Update status bar
+            self.status_bar.showMessage(f"3D camera focused on {entity.name}")
 
     def _set_item_color_by_source(self, item, entity):
         """Set item text color based on entity source and type - SILENT VERSION"""
@@ -5636,7 +6259,7 @@ class SimplifiedMapEditor(QMainWindow):
             
             current_time = time.time()
             if current_time - self._last_selection_log_time > 2.0:  # Only every 2 seconds
-                print(f"ðŸŽ¯ Selected entity styling applied: {getattr(entity, 'name', 'unknown')}")
+                print(f"Ã°Å¸Å½Â¯ Selected entity styling applied: {getattr(entity, 'name', 'unknown')}")
                 self._last_selection_log_time = current_time
         else:
             # NON-SELECTED ENTITY STYLING
@@ -5778,20 +6401,15 @@ class SimplifiedMapEditor(QMainWindow):
             print(f"Error fixing entity colors: {e}")
 
     def update_entity_tree(self):
-        """Update the entity tree with current entities and grouping - ENHANCED WITH COLORS"""
-        # Clear the tree
+        """Update the entity tree with current entities and grouping, theme-aware"""
         self.entity_tree.clear()
         
         if not self.entities:
             return
         
-        # Get grouping method
         grouping = self.group_combo.currentText()
-        
-        # Get filter text
         filter_text = self.entity_filter.text().lower()
         
-        # Create entity items based on grouping
         if grouping == "No Grouping":
             self._populate_tree_no_grouping(filter_text)
         elif grouping == "By Map":
@@ -5799,20 +6417,14 @@ class SimplifiedMapEditor(QMainWindow):
         elif grouping == "By Source":
             self._populate_tree_by_source(filter_text)
         elif grouping == "By Type":
-            self._populate_tree_by_type_enhanced(filter_text)  # Use enhanced version
+            self._populate_tree_by_type_enhanced(filter_text)
         
-        # Expand all top-level items
+        # Expand top-level items
         for i in range(self.entity_tree.topLevelItemCount()):
             self.entity_tree.topLevelItem(i).setExpanded(True)
-        
-        print(f"Entity tree updated with color coding for {len(self.entities)} entities")
 
     def _populate_tree_by_type_enhanced(self, filter_text=""):
-        """Enhanced type grouping with color-coded group headers"""
-        # Create type groups with color-coded headers
         type_groups = {}
-        
-        # Define group colors (matching legend)
         group_colors = {
             "Vehicle": QColor(52, 152, 255),
             "NPC": QColor(46, 255, 113),
@@ -5826,67 +6438,62 @@ class SimplifiedMapEditor(QMainWindow):
             "WorldSectors": QColor(255, 100, 100),
             "Unknown": QColor(130, 130, 130)
         }
-        
-        # Sort entities by inferred type
+
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-            
-            # Determine entity type
+
             entity_type = self._determine_entity_type_for_browser(entity)
-            
-            # Check for worldsectors override
             source_file_path = getattr(entity, 'source_file_path', None)
             source_file = getattr(entity, 'source_file', None)
-            if (source_file == 'worldsectors' or 
-                (source_file_path and 'worldsector' in source_file_path.lower())):
+            if source_file == 'worldsectors' or (source_file_path and 'worldsector' in source_file_path.lower()):
                 entity_type = "WorldSectors"
-            
-            # Create type group if not exists
+
+            # Create group header if it doesn't exist
             if entity_type not in type_groups:
                 type_group = QTreeWidgetItem()
-                type_group.setText(0, f"{entity_type} ({0})")  # Will update count later
-                
-                # Set group header color
+                type_group.setText(0, f"{entity_type} (0)")
+                # Keep background color
                 group_color = group_colors.get(entity_type, group_colors["Unknown"])
-                
-                # Create colored background for group header
                 bg_color = QColor(group_color)
-                bg_color.setAlpha(80)  # Semi-transparent
+                bg_color.setAlpha(80)
                 type_group.setBackground(0, bg_color)
-                
-                # Set contrasting text color
-                if entity_type in ["Trigger", "Light"]:  # Yellow/light colors need dark text
-                    type_group.setForeground(0, QColor(0, 0, 0))  # Black text
-                else:
-                    type_group.setForeground(0, QColor(255, 255, 255))  # White text
-                
-                # Make group header bold
+
+                # Use theme-aware text for header
+                self._set_item_theme_color(type_group)
+
+                # Bold font for group headers
                 font = type_group.font(0)
                 font.setBold(True)
                 type_group.setFont(0, font)
-                
+
                 self.entity_tree.addTopLevelItem(type_group)
                 type_groups[entity_type] = {'group': type_group, 'count': 0}
-            
-            # Add entity to type group
+
+            # Add entity to group
             item = QTreeWidgetItem(type_groups[entity_type]['group'])
             item.setText(0, entity.name)
             item.setText(1, entity.id)
             item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
             item.setData(0, Qt.ItemDataRole.UserRole, entity)
-            
-            # Apply color coding to the entity item
-            self._set_item_color_by_source(item, entity)
-            
-            # Update count
+
+            # Theme-aware text color
+            self._set_item_theme_color(item)
+
             type_groups[entity_type]['count'] += 1
-        
-        # Update group headers with counts
+
+        # Update group counts
         for entity_type, group_data in type_groups.items():
             count = group_data['count']
             group_data['group'].setText(0, f"{entity_type} ({count})")
+            # Apply theme-aware color again after updating text
+            self._set_item_theme_color(group_data['group'])
+
+    def _set_item_theme_color(self, item):
+        """Set QTreeWidgetItem text color based on current theme"""
+        color = QColor(255, 255, 255) if self.force_dark_theme else QColor(0, 0, 0)
+        for col in range(item.columnCount()):
+            item.setForeground(col, color)
 
     def create_color_legend_group(self):
         """Enhanced color legend with better organization"""
@@ -5912,223 +6519,158 @@ class SimplifiedMapEditor(QMainWindow):
         self.create_color_legend_item(legend_layout, QColor(130, 130, 130), "Dark Gray - Unknown Type") 
         
     def _populate_tree_no_grouping(self, filter_text=""):
-        """Populate tree with no grouping"""
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-                
-            # Create item
+            
             item = QTreeWidgetItem()
             item.setText(0, entity.name)
             item.setText(1, entity.id)
             item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
-            
-            # Store entity reference
             item.setData(0, Qt.ItemDataRole.UserRole, entity)
             
-            # Color based on source
-            self._set_item_color_by_source(item, entity)
+            # Set theme-aware text color
+            self._set_item_theme_color(item)
             
             self.entity_tree.addTopLevelItem(item)
 
     def _populate_tree_by_map(self, filter_text=""):
-        """Populate tree grouped by map"""
-        # Create map groups
         map_groups = {}
         
-        # Default group for entities without a map
         no_map_group = QTreeWidgetItem()
         no_map_group.setText(0, "No Map")
         no_map_group.setBackground(0, QColor(200, 200, 200, 100))
         self.entity_tree.addTopLevelItem(no_map_group)
         
-        # Sort entities by map
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-                
+            
             map_name = entity.map_name
             if not map_name:
-                # Add to "No Map" group
                 item = QTreeWidgetItem(no_map_group)
-                item.setText(0, entity.name)
-                item.setText(1, entity.id)
-                item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
-                item.setData(0, Qt.ItemDataRole.UserRole, entity)
-                self._set_item_color_by_source(item, entity)
             else:
-                # Create map group if not exists
                 if map_name not in map_groups:
                     map_group = QTreeWidgetItem()
                     map_group.setText(0, os.path.basename(map_name))
                     map_group.setBackground(0, QColor(220, 240, 255, 100))
                     self.entity_tree.addTopLevelItem(map_group)
                     map_groups[map_name] = map_group
-                
-                # Add entity to map group
                 item = QTreeWidgetItem(map_groups[map_name])
-                item.setText(0, entity.name)
-                item.setText(1, entity.id)
-                item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
-                item.setData(0, Qt.ItemDataRole.UserRole, entity)
-                self._set_item_color_by_source(item, entity)
+            
+            item.setText(0, entity.name)
+            item.setText(1, entity.id)
+            item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
+            item.setData(0, Qt.ItemDataRole.UserRole, entity)
+            self._set_item_theme_color(item)
         
-        # Remove empty groups
         if no_map_group.childCount() == 0:
             index = self.entity_tree.indexOfTopLevelItem(no_map_group)
             self.entity_tree.takeTopLevelItem(index)
 
     def _populate_tree_by_source(self, filter_text=""):
-        """Populate tree grouped by source file - ENHANCED for worldsectors"""
-        # Create source groups
         source_groups = {}
         
-        # Default group for entities without a source
         unknown_group = QTreeWidgetItem()
         unknown_group.setText(0, "Unknown Source")
         unknown_group.setBackground(0, QColor(200, 200, 200, 100))
         self.entity_tree.addTopLevelItem(unknown_group)
         
-        # Source colors for reference
-        source_colors = {
-            "mapsdata": QColor(0, 180, 0),
-            "managers": QColor(180, 0, 180),
-            "omnis": QColor(255, 140, 0),
-            "sectorsdep": QColor(0, 120, 255),
-            "worldsectors": QColor(255, 100, 100),  # Red for worldsectors
-            "preload": QColor(100, 255, 100),
-            "particles": QColor(255, 255, 100),
-            "unknown": QColor(100, 100, 100)
-        }
-        
-        # Sort entities by source
         for entity in self.entities:
-            # Apply filter
             if filter_text and filter_text not in entity.name.lower() and filter_text not in entity.id.lower():
                 continue
-                
-            source = getattr(entity, 'source_file', None)
+            
+            source = getattr(entity, 'source_file', 'unknown')
             if not source:
                 source = "unknown"
-                
-            # Create source group if not exists
+            
             if source not in source_groups:
                 source_group = QTreeWidgetItem()
                 source_group.setText(0, source)
-                
-                # Set background color to match entity color
-                if source in source_colors:
-                    color = source_colors[source]
-                    # Make a more transparent version for the background
-                    bg_color = QColor(color.red(), color.green(), color.blue(), 50)
-                    source_group.setBackground(0, bg_color)
-                
+                source_group.setBackground(0, QColor(220, 220, 220, 100))
                 self.entity_tree.addTopLevelItem(source_group)
                 source_groups[source] = source_group
             
-            # Add entity to source group
             item = QTreeWidgetItem(source_groups[source])
             item.setText(0, entity.name)
             item.setText(1, entity.id)
             item.setText(2, f"({entity.x:.1f}, {entity.y:.1f}, {entity.z:.1f})")
             item.setData(0, Qt.ItemDataRole.UserRole, entity)
-            self._set_item_color_by_source(item, entity)
+            self._set_item_theme_color(item)
 
     def _update_tree_selection(self):
-        """Update tree selection to match canvas selection - ENHANCED WITH COLOR UPDATES"""
+        """Update tree selection to match canvas, without overriding theme colors"""
         if not hasattr(self, 'entity_tree'):
             return
-            
-        # Block signals to prevent feedback loop
-        self.entity_tree.blockSignals(True)
         
+        self.entity_tree.blockSignals(True)
         try:
-            # Get selected entities from canvas
-            selected_entities = []
-            if hasattr(self.canvas, 'selected'):
-                selected_entities = self.canvas.selected
-            elif self.selected_entity:
-                selected_entities = [self.selected_entity]
-            
-            # Clear current selection
+            selected_entities = getattr(self.canvas, 'selected', [])
             self.entity_tree.clearSelection()
-            
-            # Update ALL items to refresh their colors (removes old selection highlighting)
             self._refresh_all_item_colors()
             
-            # No selection to update
-            if not selected_entities:
-                return
-            
-            # Find and select matching items
             for i in range(self.entity_tree.topLevelItemCount()):
                 top_item = self.entity_tree.topLevelItem(i)
-                
-                # Check if this is a group
-                if top_item.data(0, Qt.ItemDataRole.UserRole) is None:
-                    # Group item - check children
+                if top_item.childCount() > 0:
                     for j in range(top_item.childCount()):
                         child = top_item.child(j)
                         entity = child.data(0, Qt.ItemDataRole.UserRole)
                         if entity in selected_entities:
                             child.setSelected(True)
-                            # Update color for selected entity
-                            self._set_item_color_by_source(child, entity)
                 else:
-                    # Direct entity - check it
                     entity = top_item.data(0, Qt.ItemDataRole.UserRole)
                     if entity in selected_entities:
                         top_item.setSelected(True)
-                        # Update color for selected entity
-                        self._set_item_color_by_source(top_item, entity)
-            
-            print(f"Updated tree selection colors for {len(selected_entities)} entities")
-            
         finally:
-            # Unblock signals
             self.entity_tree.blockSignals(False)
 
     def _refresh_all_item_colors(self):
-        """Refresh colors for all items in the tree to remove old selection highlighting"""
-        try:
-            for i in range(self.entity_tree.topLevelItemCount()):
-                top_item = self.entity_tree.topLevelItem(i)
-                
-                # Check if this is a group
-                if top_item.data(0, Qt.ItemDataRole.UserRole) is None:
-                    # Group item - refresh children
-                    for j in range(top_item.childCount()):
-                        child = top_item.child(j)
-                        entity = child.data(0, Qt.ItemDataRole.UserRole)
-                        if entity:
-                            self._set_item_color_by_source(child, entity)
-                else:
-                    # Direct entity - refresh it
-                    entity = top_item.data(0, Qt.ItemDataRole.UserRole)
-                    if entity:
-                        self._set_item_color_by_source(top_item, entity)
-                        
-        except Exception as e:
-            print(f"Error refreshing item colors: {e}")
+        """Refresh all tree items to theme colors only"""
+        for i in range(self.entity_tree.topLevelItemCount()):
+            top_item = self.entity_tree.topLevelItem(i)
+            
+            # If it's a group with children
+            if top_item.childCount() > 0:
+                for j in range(top_item.childCount()):
+                    child = top_item.child(j)
+                    self._set_item_theme_color(child)
+            else:
+                self._set_item_theme_color(top_item)
+
+        # Force repaint so colors update immediately
+        self.entity_tree.viewport().update()
 
     def on_entity_selected(self, entity):
-        """Handle when an entity is selected on the canvas - ENHANCED WITH COLOR UPDATES"""
+        """Handle when an entity is selected - WORKS IN BOTH MODES"""
         self.selected_entity = entity
         
-        # Update gizmo when entity is selected from canvas
-        if hasattr(self.canvas, 'gizmo_renderer') and entity:
-            print(f"ðŸŽ¯ Canvas selection: Updating gizmo for {entity.name}")
-            self.canvas.gizmo_renderer.update_gizmo_for_entity(entity)
-        elif hasattr(self.canvas, 'gizmo_renderer'):
-            # Hide gizmo if no entity selected
-            self.canvas.gizmo_renderer.hide_gizmo()
+        # Log selection
+        if entity:
+            print(f"Entity selected: {entity.name} (ID: {entity.id}) in {'2D' if self.canvas.mode == 0 else '3D'} mode")
+        else:
+            print(f"Entity deselected in {'2D' if self.canvas.mode == 0 else '3D'} mode")
         
+        # Update gizmo (2D mode only)
+        if self.canvas.mode == 0:  # 2D mode
+            if hasattr(self.canvas, 'gizmo_renderer') and entity:
+                print(f"2D mode: Updating gizmo for {entity.name}")
+                self.canvas.gizmo_renderer.update_gizmo_for_entity(entity)
+            elif hasattr(self.canvas, 'gizmo_renderer'):
+                # Hide gizmo when nothing is selected
+                self.canvas.gizmo_renderer.hide_gizmo()
+        else:  # 3D mode
+            # Gizmo not shown in 3D mode
+            if hasattr(self.canvas, 'gizmo_renderer'):
+                self.canvas.gizmo_renderer.hide_gizmo()
+        
+        # Update UI (works in both modes)
         self.update_ui_for_selected_entity(entity)
         
-        # Update selection in the entity tree WITH COLOR UPDATES
+        # Update selection in entity tree
         self._update_tree_selection()
+        
+        # Force canvas update
+        self.canvas.update()
 
     def update_entity_tree_colors_only(self):
         """Update only the colors in the entity tree without rebuilding it"""
@@ -6215,13 +6757,13 @@ class SimplifiedMapEditor(QMainWindow):
         test_y = 777.54321
         target_entity.y = test_y
         
-        print(f"ðŸ“ Moved entity Y: {original_y} -> {test_y}")
+        print(f"Ã°Å¸â€œÂ Moved entity Y: {original_y} -> {test_y}")
         
         # Step 4: Update XML using normal method
         xml_updated = self.canvas.update_entity_xml(target_entity)
         if xml_updated:
             self.canvas._auto_save_entity_changes(target_entity)
-            print(f"ðŸ’¾ Updated and saved XML")
+            print(f"Ã°Å¸â€™Â¾ Updated and saved XML")
         
         # Step 5: Verify save
         self._verify_position_sync_in_file(target_entity.source_file_path, entity_name)
@@ -6233,21 +6775,6 @@ class SimplifiedMapEditor(QMainWindow):
         
         print(f"Restored position")
         print(f"Test complete")
-
-    def select_all_entities(self):
-        """Select all entities in the tree"""
-        # Select all non-group items
-        for i in range(self.entity_tree.topLevelItemCount()):
-            top_item = self.entity_tree.topLevelItem(i)
-            
-            # Check if this is a group
-            if top_item.data(0, Qt.ItemDataRole.UserRole) is None:
-                # Group item - select all children
-                for j in range(top_item.childCount()):
-                    top_item.child(j).setSelected(True)
-            else:
-                # Direct entity - select it
-                top_item.setSelected(True)
 
     def clear_entity_selection(self):
         """Clear entity selection in the tree"""
@@ -6400,16 +6927,16 @@ class SimplifiedMapEditor(QMainWindow):
                     print(f"Saved: {file_info['name']}")
                             
                 except Exception as e:
-                    saved_files.append(f"âœ— {file_info['name']} - Error: {str(e)}")
-                    print(f"âœ— Failed to save {file_info['name']}: {e}")
+                    saved_files.append(f"Ã¢Å“â€” {file_info['name']} - Error: {str(e)}")
+                    print(f"Ã¢Å“â€” Failed to save {file_info['name']}: {e}")
             
             # Close progress dialog
             progress_dialog.setValue(100)
             progress_dialog.close()
             
             # Show results
-            success_count = len([f for f in saved_files if f.startswith('âœ“')])
-            error_count = len([f for f in saved_files if f.startswith('âœ—')])
+            success_count = len([f for f in saved_files if f.startswith('Ã¢Å“â€œ')])
+            error_count = len([f for f in saved_files if f.startswith('Ã¢Å“â€”')])
             
             if error_count == 0:
                 QMessageBox.information(
@@ -6463,7 +6990,7 @@ class SimplifiedMapEditor(QMainWindow):
         print(f"WorldSector XML files:")
         if worldsector_files:
             for xml_file in worldsector_files:
-                exists = "âœ“" if os.path.exists(xml_file) else "âŒ"
+                exists = "Ã¢Å“â€œ" if os.path.exists(xml_file) else "Ã¢ÂÅ’"
                 print(f"  {exists} {os.path.basename(xml_file)}")
         else:
             print(f"  No WorldSector files found")
@@ -6663,6 +7190,42 @@ class SimplifiedMapEditor(QMainWindow):
         self.status_bar.showMessage(f"WorldSectors objects visibility: {visibility}")
         print(f"Objects visibility toggled: {visibility}, showing {len(all_items)} entities")
     
+    def _update_object_xml_position(self, obj):
+        """Update the XML element with the current object position"""
+        if not hasattr(obj, 'xml_element') or obj.xml_element is None:
+            return False
+        
+        try:
+            import struct
+            
+            # Find hidPos field
+            pos_field = obj.xml_element.find(".//field[@name='hidPos']")
+            if pos_field is not None:
+                # Update the value-Vector3 attribute
+                pos_field.set('value-Vector3', f"{obj.x},{obj.y},{obj.z}")
+                
+                # Update the BinHex data
+                pos_bytes = struct.pack('<fff', obj.x, obj.y, obj.z)
+                pos_field.set('type', 'BinHex')
+                pos_field.text = pos_bytes.hex().upper()
+            
+            # Also update hidPos_precise if it exists
+            pos_precise_field = obj.xml_element.find(".//field[@name='hidPos_precise']")
+            if pos_precise_field is not None:
+                # Update the value-Vector3 attribute
+                pos_precise_field.set('value-Vector3', f"{obj.x},{obj.y},{obj.z}")
+                
+                # Update the BinHex data
+                pos_bytes = struct.pack('<fff', obj.x, obj.y, obj.z)
+                pos_precise_field.set('type', 'BinHex')
+                pos_precise_field.text = pos_bytes.hex().upper()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error updating object XML position: {e}")
+            return False
+    
     def setup_conversion_tools(self):
         """Setup the file conversion tools (internal use only)"""
         import sys
@@ -6845,11 +7408,11 @@ class SimplifiedMapEditor(QMainWindow):
             "*.omnis.fcb", "*.omnis.xml",
             "*.sectorsdep.fcb", "*.sectorsdep.xml",
             "mapsdata.fcb", "mapsdata.xml",
-            ".managers.fcb", ".managers.xml",
-            ".omnis.fcb", ".omnis.xml", 
+            "managers.fcb", "managers.xml",
+            "omnis.fcb", "omnis.xml", 
             "sectorsdep.fcb", "sectorsdep.xml"
         ]
-        
+
         # Search for files
         search_results = self.find_files_in_subfolders(folder_path, main_patterns)
         
@@ -6892,7 +7455,7 @@ class SimplifiedMapEditor(QMainWindow):
                     "location": os.path.relpath(os.path.dirname(main_file), folder_path)
                 }
         
-        # Find other files using the same logic as your existing find_xml_files method
+        # Find other files using the same logic
         file_types = {
             "omnis": {
                 "patterns": [f"{level_name}.omnis.fcb", f"{level_name}.omnis.xml", ".omnis.fcb", ".omnis.xml"] if level_name else [".omnis.fcb", ".omnis.xml"],
@@ -6907,7 +7470,7 @@ class SimplifiedMapEditor(QMainWindow):
                 "description": "Sector Dependencies"
             }
         }
-        
+
         for file_type, info in file_types.items():
             for pattern in info["patterns"]:
                 # Look for exact matches first
@@ -6919,7 +7482,7 @@ class SimplifiedMapEditor(QMainWindow):
                 if matching_files:
                     file_path = matching_files[0]
                     
-                    # Convert FCB to XML if needed
+                    # Standard handling for all files using Gibbed tools
                     if file_path.endswith('.fcb'):
                         xml_file = file_path.replace('.fcb', '.xml')
                         try:
@@ -6936,6 +7499,7 @@ class SimplifiedMapEditor(QMainWindow):
                             print(f"Error converting {file_path}: {e}")
                             continue
                     else:
+                        # Already XML - use directly
                         found_files[file_type] = {
                             "path": file_path,
                             "description": info["description"],
@@ -6943,108 +7507,128 @@ class SimplifiedMapEditor(QMainWindow):
                             "location": os.path.relpath(os.path.dirname(file_path), folder_path)
                         }
                     break
-        
+
         return found_files
 
     def open_entity_editor(self):
-        """Open or show the entity editor window - FIXED IMPORT"""
-        
-        # Try multiple import methods
-        EntityEditorWindow = None
-        
-        # Method 1: Try direct import
-        try:
-            from entity_editor import EntityEditorWindow
-            print("Successfully imported EntityEditorWindow from entity_editor.py")
-        except ImportError as e1:
-            print(f"Failed direct import: {e1}")
+            """Open or show the entity editor window - FIXED IMPORT"""
             
-            # Method 2: Try importing from current directory
+            # Try multiple import methods
+            EntityEditorWindow = None
+            
+            # Method 1: Try direct import
             try:
-                import sys
-                import os
-                current_dir = os.path.dirname(__file__)
-                if current_dir not in sys.path:
-                    sys.path.insert(0, current_dir)
                 from entity_editor import EntityEditorWindow
-                print("Successfully imported EntityEditorWindow from current directory")
-            except ImportError as e2:
-                print(f"Failed current directory import: {e2}")
+                print("Successfully imported EntityEditorWindow from entity_editor.py")
+            except ImportError as e1:
+                print(f"Failed direct import: {e1}")
                 
-                # Method 3: Try to find the file and give helpful error
+                # Method 2: Try importing from current directory
                 try:
+                    import sys
                     import os
-                    current_dir = os.path.dirname(__file__) if hasattr(self, '__file__') else os.getcwd()
-                    entity_editor_path = os.path.join(current_dir, "entity_editor.py")
+                    current_dir = os.path.dirname(__file__)
+                    if current_dir not in sys.path:
+                        sys.path.insert(0, current_dir)
+                    from entity_editor import EntityEditorWindow
+                    print("Successfully imported EntityEditorWindow from current directory")
+                except ImportError as e2:
+                    print(f"Failed current directory import: {e2}")
                     
-                    if os.path.exists(entity_editor_path):
-                        error_msg = f"Entity editor file exists at {entity_editor_path} but import failed.\nError: {e2}"
-                    else:
-                        # Look for the file in nearby directories
-                        found_files = []
-                        for root, dirs, files in os.walk(current_dir):
-                            if "entity_editor.py" in files:
-                                found_files.append(os.path.join(root, "entity_editor.py"))
+                    # Method 3: Try to find the file and give helpful error
+                    try:
+                        import os
+                        current_dir = os.path.dirname(__file__) if hasattr(self, '__file__') else os.getcwd()
+                        entity_editor_path = os.path.join(current_dir, "entity_editor.py")
                         
-                        if found_files:
-                            error_msg = f"Entity editor file found at:\n" + "\n".join(found_files[:3])
-                            error_msg += f"\n\nMove one of these files to: {current_dir}"
+                        if os.path.exists(entity_editor_path):
+                            error_msg = f"Entity editor file exists at {entity_editor_path} but import failed.\nError: {e2}"
                         else:
-                            error_msg = f"Entity editor file not found!\n\nCurrent directory: {current_dir}\nExpected file: {entity_editor_path}\n\nPlease create entity_editor.py in the same directory as your main application."
+                            # Look for the file in nearby directories
+                            found_files = []
+                            for root, dirs, files in os.walk(current_dir):
+                                if "entity_editor.py" in files:
+                                    found_files.append(os.path.join(root, "entity_editor.py"))
+                            
+                            if found_files:
+                                error_msg = f"Entity editor file found at:\n" + "\n".join(found_files[:3])
+                                error_msg += f"\n\nMove one of these files to: {current_dir}"
+                            else:
+                                error_msg = f"Entity editor file not found!\n\nCurrent directory: {current_dir}\nExpected file: {entity_editor_path}\n\nPlease create entity_editor.py in the same directory as your main application."
+                        
+                        from PyQt6.QtWidgets import QMessageBox
+                        QMessageBox.critical(self, "Entity Editor Import Error", error_msg)
+                        return
+                        
+                    except Exception as e3:
+                        from PyQt6.QtWidgets import QMessageBox
+                        QMessageBox.critical(self, "Entity Editor Error", 
+                                        f"Could not import Entity Editor:\n{e1}\n\nAlso failed to diagnose the problem:\n{e3}")
+                        return
+            
+            # If we get here, import was successful
+            if EntityEditorWindow is None:
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.critical(self, "Error", "EntityEditorWindow class not found after import!")
+                return
+            
+            # Create editor if it doesn't exist
+            if not hasattr(self, 'entity_editor') or self.entity_editor is None:
+                try:
+                    print("=== Creating new Entity Editor window ===")
+                    self.entity_editor = EntityEditorWindow(self, self.canvas)
+                    print("Successfully created EntityEditorWindow instance")
                     
+                    # Set current entity if one is selected
+                    if hasattr(self.canvas, 'selected') and self.canvas.selected:
+                        entity = self.canvas.selected[0]
+                        print(f"ðŸ“ Entity Editor: Opening with entity '{entity.name}' (ID: {entity.id})")
+                        self.entity_editor.set_entity(entity)
+                    elif hasattr(self.canvas, 'selected_entity') and self.canvas.selected_entity:
+                        entity = self.canvas.selected_entity
+                        print(f"ðŸ“ Entity Editor: Opening with entity '{entity.name}' (ID: {entity.id})")
+                        self.entity_editor.set_entity(entity)
+                    else:
+                        print("âš ï¸ Entity Editor: No entity currently selected")
+                        
+                except Exception as e:
                     from PyQt6.QtWidgets import QMessageBox
-                    QMessageBox.critical(self, "Entity Editor Import Error", error_msg)
+                    import traceback
+                    error_details = traceback.format_exc()
+                    QMessageBox.critical(self, "Entity Editor Creation Error", 
+                                    f"Failed to create Entity Editor:\n{str(e)}\n\nDetails:\n{error_details}")
+                    print(f"Entity Editor creation failed: {e}")
+                    print(f"Full traceback:\n{error_details}")
                     return
-                    
-                except Exception as e3:
-                    from PyQt6.QtWidgets import QMessageBox
-                    QMessageBox.critical(self, "Entity Editor Error", 
-                                    f"Could not import Entity Editor:\n{e1}\n\nAlso failed to diagnose the problem:\n{e3}")
-                    return
-        
-        # If we get here, import was successful
-        if EntityEditorWindow is None:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", "EntityEditorWindow class not found after import!")
-            return
-        
-        # Create editor if it doesn't exist
-        if not hasattr(self, 'entity_editor') or self.entity_editor is None:
-            try:
-                self.entity_editor = EntityEditorWindow(self, self.canvas)
-                print("Successfully created EntityEditorWindow instance")
-                
-                # Set current entity if one is selected
+            else:
+                # Editor already exists, just update the entity
+                print("=== Entity Editor window already exists ===")
                 if hasattr(self.canvas, 'selected') and self.canvas.selected:
-                    self.entity_editor.set_entity(self.canvas.selected[0])
-                    print(f"Set entity editor to selected entity: {self.canvas.selected[0].name}")
+                    entity = self.canvas.selected[0]
+                    print(f"ðŸ“ Entity Editor: Updating to entity '{entity.name}' (ID: {entity.id})")
+                    self.entity_editor.set_entity(entity)
                 elif hasattr(self.canvas, 'selected_entity') and self.canvas.selected_entity:
-                    self.entity_editor.set_entity(self.canvas.selected_entity)
-                    print(f"Set entity editor to selected entity: {self.canvas.selected_entity.name}")
+                    entity = self.canvas.selected_entity
+                    print(f"ðŸ“ Entity Editor: Updating to entity '{entity.name}' (ID: {entity.id})")
+                    self.entity_editor.set_entity(entity)
                 else:
-                    print("No entity currently selected")
-                    
+                    print("âš ï¸ Entity Editor: No entity currently selected to update")
+            
+            # Show and raise the window
+            try:
+                self.entity_editor.show()
+                self.entity_editor.raise_()
+                self.entity_editor.activateWindow()
+                if hasattr(self, 'current_entity') or (hasattr(self.canvas, 'selected') and self.canvas.selected):
+                    entity_name = self.canvas.selected[0].name if (hasattr(self.canvas, 'selected') and self.canvas.selected) else "Unknown"
+                    print(f"âœ… Entity Editor window opened successfully with '{entity_name}'")
+                else:
+                    print("âœ… Entity Editor window opened successfully (no entity loaded)")
             except Exception as e:
                 from PyQt6.QtWidgets import QMessageBox
-                import traceback
-                error_details = traceback.format_exc()
-                QMessageBox.critical(self, "Entity Editor Creation Error", 
-                                f"Failed to create Entity Editor:\n{str(e)}\n\nDetails:\n{error_details}")
-                print(f"Entity Editor creation failed: {e}")
-                print(f"Full traceback:\n{error_details}")
-                return
-        
-        # Show and raise the window
-        try:
-            self.entity_editor.show()
-            self.entity_editor.raise_()
-            self.entity_editor.activateWindow()
-            print("Entity Editor window opened successfully")
-        except Exception as e:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to show Entity Editor window:\n{str(e)}")
-            print(f"Failed to show Entity Editor: {e}")
-                        
+                QMessageBox.critical(self, "Error", f"Failed to show Entity Editor window:\n{str(e)}")
+                print(f"Failed to show Entity Editor: {e}")
+
     def toggle_grid(self):
         """Toggle grid visibility"""
         self.canvas.show_grid = not self.canvas.show_grid
@@ -7060,6 +7644,362 @@ class SimplifiedMapEditor(QMainWindow):
         
         visibility = "visible" if self.canvas.show_entities else "hidden"
         self.status_bar.showMessage(f"Entities visibility: {visibility}")
+    
+    def toggle_theme(self):
+        """Toggle between light and dark theme"""
+        self.force_dark_theme = not self.force_dark_theme
+        self.apply_theme()
+        
+        # Update button text
+        if self.force_dark_theme:
+            self.theme_toggle_action.setText("Light Mode")
+            self.status_bar.showMessage("Dark theme enabled")
+        else:
+            self.theme_toggle_action.setText("Dark Mode")
+            self.status_bar.showMessage("Light theme enabled")
+        
+        # Force the entity tree to update colors immediately
+        if hasattr(self, 'entity_tree'):
+            self.force_refresh_entity_tree_colors()
+    
+    def toggle_invert_mouse(self):
+        """Toggle mouse pan inversion"""
+        self.invert_mouse_pan = not self.invert_mouse_pan
+        if hasattr(self.canvas, 'invert_mouse_pan'):
+            self.canvas.invert_mouse_pan = self.invert_mouse_pan
+        status = "enabled" if self.invert_mouse_pan else "disabled"
+        self.status_bar.showMessage(f"Inverted mouse pan {status}")
+    
+    def apply_theme(self):
+        """Apply the selected theme to the application"""
+        if self.force_dark_theme:
+            # Dark theme stylesheet
+            dark_style = """
+                QWidget {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QGroupBox {
+                    background-color: #353535;
+                    border: 1px solid #555555;
+                    border-radius: 5px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                    color: #ffffff;
+                }
+                QGroupBox::title {
+                    color: #ffffff;
+                    subcontrol-origin: margin;
+                    subcontrol-position: top left;
+                    padding: 2px 5px;
+                }
+                QPushButton {
+                    background-color: #404040;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #4a4a4a;
+                }
+                QPushButton:pressed {
+                    background-color: #353535;
+                }
+                QPushButton:checked {
+                    background-color: #0078d7;       /* Same blue as light mode */
+                    border: 1px solid #005a9e;
+                    color: #ffffff;
+                }
+                QPushButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QLabel {
+                    color: #ffffff;
+                    background-color: transparent;
+                }
+                QLineEdit {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 3px;
+                    padding: 2px;
+                }
+                QComboBox {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 3px;
+                    padding: 2px;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                    border-left: 5px solid transparent;
+                    border-right: 5px solid transparent;
+                    border-top: 5px solid #ffffff;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #353535;
+                    color: #ffffff;
+                    selection-background-color: #404040;
+                }
+                QTreeWidget {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QTreeWidget::item:selected {
+                    background-color: #404040;
+                    color: #ffffff;
+                }
+                QTextEdit {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QScrollBar:vertical {
+                    background-color: #2b2b2b;
+                    width: 12px;
+                }
+                QScrollBar::handle:vertical {
+                    background-color: #555555;
+                    border-radius: 6px;
+                }
+                QScrollBar:horizontal {
+                    background-color: #2b2b2b;
+                    height: 12px;
+                }
+                QScrollBar::handle:horizontal {
+                    background-color: #555555;
+                    border-radius: 6px;
+                }
+                QMenuBar {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QMenuBar::item:selected {
+                    background-color: #404040;
+                }
+                QMenu {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QMenu::item:selected {
+                    background-color: #404040;
+                }
+                QStatusBar {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QDockWidget {
+                    color: #ffffff;
+                }
+                QDockWidget::title {
+                    background-color: #353535;
+                    color: #ffffff;
+                    padding: 4px;
+                }
+                QToolBar {
+                    background-color: #2b2b2b;
+                    border: 1px solid #555555;
+                }
+                QToolBar QToolButton {
+                    color: #ffffff;
+                    background-color: transparent;
+                }
+                QToolBar QToolButton:hover {
+                    background-color: #404040;
+                }
+                QToolBar QToolButton:checked {
+                    background-color: #0078d7;       /* Match light mode */
+                    border: 1px solid #005a9e;
+                    color: #ffffff;
+                }
+                QToolBar QToolButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QToolBar::separator {
+                    background-color: #555555;
+                    width: 1px;
+                }
+                QHeaderView::section {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                }
+                QTabWidget::pane {
+                    border: 1px solid #555555;
+                    background-color: #2b2b2b;
+                }
+                QTabBar::tab {
+                    background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    padding: 5px;
+                }
+                QTabBar::tab:selected {
+                    background-color: #404040;
+                }
+            """
+            self.setStyleSheet(dark_style)
+        else:
+            # Light theme stylesheet
+            light_style = """
+                QWidget {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QGroupBox {
+                    background-color: #ffffff;
+                    border: 1px solid #c0c0c0;
+                    border-radius: 5px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                    color: #000000;
+                }
+                QGroupBox::title {
+                    color: #000000;
+                    subcontrol-origin: margin;
+                    subcontrol-position: top left;
+                    padding: 2px 5px;
+                }
+                QPushButton {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #d0d0d0;
+                }
+                QPushButton:pressed {
+                    background-color: #c0c0c0;
+                }
+                QPushButton:checked {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                    border: 1px solid #005a9e;
+                }
+                QPushButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QLabel {
+                    color: #000000;
+                    background-color: transparent;
+                }
+                QLineEdit {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QComboBox {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                    border-left: 5px solid transparent;
+                    border-right: 5px solid transparent;
+                    border-top: 5px solid #000000;
+                }
+                QTreeWidget {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QTreeWidget::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+                QTextEdit {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QMenuBar {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QMenuBar::item:selected {
+                    background-color: #e0e0e0;
+                }
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+                QStatusBar {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QDockWidget {
+                    color: #000000;
+                }
+                QDockWidget::title {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    padding: 4px;
+                }
+                QToolBar {
+                    background-color: #f0f0f0;
+                    border: 1px solid #c0c0c0;
+                }
+                QToolBar QToolButton {
+                    color: #000000;
+                    background-color: transparent;
+                }
+                QToolBar QToolButton:hover {
+                    background-color: #e0e0e0;
+                }
+                QToolBar QToolButton:checked {
+                    background-color: #0078d7;
+                    border: 1px solid #005a9e;
+                    color: #ffffff;
+                }
+                QToolBar QToolButton:checked:hover {
+                    background-color: #1e88e5;
+                }
+                QHeaderView::section {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                }
+                QTabWidget::pane {
+                    border: 1px solid #b0b0b0;
+                    background-color: #ffffff;
+                }
+                QTabBar::tab {
+                    background-color: #e0e0e0;
+                    color: #000000;
+                    border: 1px solid #b0b0b0;
+                    padding: 5px;
+                }
+                QTabBar::tab:selected {
+                    background-color: #ffffff;
+                }
+            """
+            self.setStyleSheet(light_style)
+
+        # ðŸ”„ Update entity color legend text colors dynamically
+        if hasattr(self, "entity_colors_header"):
+            if self.force_dark_theme:
+                self.entity_colors_header.setStyleSheet("color: white; margin-bottom: 8px; padding: 2px;")
+                for label in getattr(self, "color_legend_labels", []):
+                    label.setStyleSheet("color: white;")
+            else:
+                self.entity_colors_header.setStyleSheet("color: black; margin-bottom: 8px; padding: 2px;")
+                for label in getattr(self, "color_legend_labels", []):
+                    label.setStyleSheet("color: black;")
     
     def force_canvas_update(self):
         """Force the canvas to update and redraw entities"""
@@ -7080,34 +8020,6 @@ class SimplifiedMapEditor(QMainWindow):
             # Force the application to process events
             QApplication.processEvents()
 
-    def reset_view(self):
-        """Reset the view to show all content with debugging"""
-        print("Resetting view to show all content, Please wait.")
-        
-        if not self.entities:
-            print("No entities to display")
-            self.status_bar.showMessage("No entities to display")
-            return
-            
-        print(f"Resetting view for {len(self.entities)} entities")
-        
-        # Get current scale factor before reset
-        old_scale = self.canvas.scale_factor
-        
-        # Call the canvas reset_view method
-        new_scale = self.canvas.reset_view()
-        
-        # Debug output
-        print(f"View reset: scale changed from {old_scale:.2f} to {new_scale:.2f}")
-        
-        # Force a redraw
-        self.canvas.update()
-        
-        # Update status bar
-        self.status_bar.showMessage(f"View reset (scale: {new_scale:.2f})")
-        
-        # Return the new scale
-        return new_scale
     
     def save_xml_with_precision_preservation(self, tree, file_path):
         """Save XML while preserving original floating-point precision"""
@@ -7195,19 +8107,33 @@ class SimplifiedMapEditor(QMainWindow):
         return preferred_path
 
     def update_ui_for_selected_entity(self, entity):
-        """Update UI when an entity is selected"""
+        """Update UI when an entity is selected - MODE AWARE"""
         if entity:
-            # Get source_file attribute safely using getattr with a default value
+            # Get source_file attribute safely
             source_file = getattr(entity, 'source_file', None)
             source_text = f"Source: {source_file}" if source_file else "Source: unknown"
             
-            self.selected_entity_label.setText(
+            # Get current mode
+            mode_text = "2D Mode" if self.canvas.mode == 0 else "3D Mode"
+            
+            # Build selection info text
+            selection_text = (
                 f"Selected: {entity.name}\n"
                 f"Position: ({entity.x:.2f}, {entity.y:.2f}, {entity.z:.2f})\n"
-                f"{source_text}"
+                f"{source_text}\n"
+                f"View: {mode_text}"
+            )
+            
+            self.selected_entity_label.setText(selection_text)
+            
+            # Update status bar
+            self.status_bar.showMessage(
+                f"Selected: {entity.name} at ({entity.x:.0f}, {entity.y:.0f}, {entity.z:.0f}) | {mode_text}"
             )
         else:
-            self.selected_entity_label.setText("No entity selected")
+            mode_text = "2D Mode" if self.canvas.mode == 0 else "3D Mode"
+            self.selected_entity_label.setText(f"No entity selected\nView: {mode_text}")
+            self.status_bar.showMessage(f"No selection | {mode_text}")
 
     def update_entity_statistics(self):
         """Update entity and object statistics by source file and type - ENHANCED VERSION"""
@@ -7330,15 +8256,101 @@ class SimplifiedMapEditor(QMainWindow):
         self.update_ui_for_selected_entity(self.selected_entity)
 
     def keyPressEvent(self, event):
-        """Handle key press events from the main window - SIMPLIFIED"""
-        # Pass the key event to the canvas for any 2D interactions
-        self.canvas.keyPressEvent(event)
+        """Handle key press events - WITH 2D/3D MODE SUPPORT"""
         
-        # Handle other application-wide shortcuts
+        # TAB KEY - Toggle between 2D and 3D
+        if event.key() == Qt.Key.Key_Tab:
+            if hasattr(self.canvas, 'toggle_view_mode'):
+                old_mode = self.canvas.mode
+                self.canvas.toggle_view_mode()
+                new_mode = self.canvas.mode
+                
+                print(f"Mode toggled from {old_mode} to {new_mode}")
+                
+                # Update status bar with mode-specific tips
+                if self.canvas.mode == 0:  # 2D mode
+                    mode_name = "2D Top-Down View"
+                    tips = "WASD: Pan | Wheel: Zoom | Left-Click: Select | Tab: Switch to 3D"
+                    print("Switched to 2D mode")
+                else:  # 3D mode
+                    mode_name = "3D Perspective View"
+                    tips = "WASD: Move | QE: Up/Down | Mouse: Look Around | Tab: Switch to 2D"
+                    print("Switched to 3D mode")
+                
+                self.statusBar().showMessage(f"Mode: {mode_name} | {tips}", 5000)
+                
+                # Update mode indicator if it exists
+                if hasattr(self, 'update_mode_indicator'):
+                    self.update_mode_indicator()
+                    
+            event.accept()
+            return
+        
+        # F1 - Help (mode-aware)
         if event.key() == Qt.Key.Key_F1:
-            # Show help dialog
-            self.show_help_dialog()
-        # Remove Tab key handler since we don't switch modes anymore
+            self.show_help_dialog_with_3d()
+            event.accept()
+            return
+        
+        # G - Toggle grid (works in both modes)
+        if event.key() == Qt.Key.Key_G:
+            self.toggle_grid()
+            event.accept()
+            return
+        
+        # E - Toggle entities (works in both modes)
+        if event.key() == Qt.Key.Key_E:
+            self.toggle_entities()
+            event.accept()
+            return
+        
+        # R - Reset view (mode-aware)
+        if event.key() == Qt.Key.Key_R:
+            self.reset_view()
+            event.accept()
+            return
+        
+        # Delete - Delete selected entities (works in both modes)
+        if event.key() == Qt.Key.Key_Delete:
+            if hasattr(self, 'delete_selected_entities'):
+                self.delete_selected_entities()
+                event.accept()
+                return
+        
+        # Ctrl+C - Copy (works in both modes)
+        if event.key() == Qt.Key.Key_C and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if hasattr(self, 'copy_selected_entities'):
+                self.copy_selected_entities()
+                event.accept()
+                return
+        
+        # Ctrl+V - Paste (works in both modes)
+        if event.key() == Qt.Key.Key_V and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if hasattr(self, 'paste_entities'):
+                self.paste_entities()
+                event.accept()
+                return
+        
+        # Ctrl+D - Duplicate (works in both modes)
+        if event.key() == Qt.Key.Key_D and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if hasattr(self, 'duplicate_selected_entities'):
+                self.duplicate_selected_entities()
+                event.accept()
+                return
+        
+        # Ctrl+E - Entity Editor (works in both modes)
+        if event.key() == Qt.Key.Key_E and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if hasattr(self, 'open_entity_editor'):
+                self.open_entity_editor()
+                event.accept()
+                return
+        
+        # Pass other keys to canvas (handles WASD differently per mode)
+        if hasattr(self, 'canvas'):
+            self.canvas.keyPressEvent(event)
+        
+        # Call parent handler for any unhandled keys
+        super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
         """Handle key release events from the main window"""
@@ -7346,60 +8358,161 @@ class SimplifiedMapEditor(QMainWindow):
         if hasattr(self.canvas, 'keyReleaseEvent'):
             self.canvas.keyReleaseEvent(event)
 
-    def show_help_dialog(self):
-        """Show help dialog with keyboard and mouse controls - SIMPLIFIED"""
+
+    def show_help_dialog_with_3d(self):
+        """Show help dialog with keyboard and mouse controls - INCLUDING 3D MODE"""
         help_text = (
             "Keyboard Controls:\n"
             "  General:\n"
-            "    R - Reset view\n"
-            "    G - Toggle grid\n"
-            "    E - Toggle entities\n"
-            "    T - Toggle terrain\n"
-            "    Y - Toggle wireframe\n"
-            "    U - Snap to terrain\n"
-            "    Del - Delete selected entities\n"
-            "    Ctrl+Z - Undo\n"
-            "    Ctrl+Y - Redo\n"
-            "    Ctrl+S - Save\n"
-            "    Ctrl+O - Open\n"
+            "    Tab        - Toggle between 2D and 3D view modes\n"
+            "    F1         - Show this help dialog\n"
+            "    Delete     - Delete selected entity/entities\n"
+            "    Ctrl+C     - Copy selected entity/entities\n"
+            "    Ctrl+V     - Paste entity/entities\n"
+            "    Ctrl+Z     - Undo (if available)\n"
+            "\n"
+            "  2D Mode Navigation:\n"
+            "    W/A/S/D    - Pan camera (Up/Left/Down/Right)\n"
+            "    Shift      - Speed boost for panning\n"
+            "    Mouse Wheel - Zoom in/out\n"
+            "\n"
+            "  3D Mode Navigation:\n"
+            "    W/S        - Move forward/backward\n"
+            "    A/D        - Move left/right (strafe)\n"
+            "    Q/E        - Move up/down (vertical)\n"
+            "    Shift      - Speed boost for movement\n"
             "\n"
             "Mouse Controls:\n"
-            "    Left Click - Select entity\n"
-            "    Right Click - Context menu\n"
-            "    Middle Click/Drag - Pan view\n"
-            "    Wheel - Zoom in/out\n"
-            "    Ctrl+Wheel - Faster zoom\n"
-            "    Shift+Drag - Multi-select\n"
+            "  2D Mode:\n"
+            "    Left Click      - Select entity\n"
+            "    Ctrl+Left Click - Multi-select entities\n"
+            "    Left Drag       - Move selected entity\n"
+            "    Mouse Wheel     - Zoom in/out\n"
+            "    Right Click     - Context menu\n"
+            "\n"
+            "  3D Mode:\n"
+            "    Left Click           - Select entity\n"
+            "    Right Click + Drag   - Rotate camera (look around)\n"
+            "    Middle Click + Drag  - Pan camera\n"
+            "    Mouse Wheel          - Move forward/backward\n"
+            "    Right Click          - Context menu\n"
+            "\n"
+            "View Options:\n"
+            "  G          - Toggle grid visibility\n"
+            "  E          - Toggle entity visibility\n"
+            "  T          - Toggle terrain visibility (if loaded)\n"
+            "  B          - Toggle sector boundaries (2D mode)\n"
+            "\n"
+            "Gizmo Controls (Both Modes):\n"
+            "  Click and drag the colored arrows to move entities\n"
+            "  Red arrow    - X axis\n"
+            "  Green arrow  - Y axis (Z in 3D)\n"
+            "  Blue arrow   - Z axis (Y in 3D)\n"
+            "\n"
+            "Tips:\n"
+            "  â€¢ Hold Shift while moving for faster camera movement\n"
+            "  â€¢ Double-click an entity in the tree to focus on it\n"
+            "  â€¢ Right-click entities for quick actions\n"
+            "  â€¢ Use Tab to switch between top-down editing and 3D preview\n"
         )
         
-        QMessageBox.information(self, "Keyboard and Mouse Controls", help_text)
+        # Create and show help dialog
+        from PyQt6.QtWidgets import QMessageBox
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Level Editor Controls - 2D & 3D Modes")
+        msg_box.setText(help_text)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.exec()
     
     def reset_view(self):
-        """Reset the view to show all content - SIMPLIFIED for 2D only"""
+        """Reset the view to show all content - UPDATED for 2D and 3D"""
         if not self.entities:
             print("No entities to display")
             self.status_bar.showMessage("No entities to display")
             return
             
-        print(f"Resetting view for {len(self.entities)} entities")
+        print(f"Resetting view for {len(self.entities)} entities in mode {self.canvas.mode}")
         
-        # Get current scale factor before reset
-        old_scale = self.canvas.scale_factor
-        
-        # Call the canvas reset_view method (2D only)
-        new_scale = self.canvas.reset_view()
-        
-        # Debug output
-        print(f"View reset: scale changed from {old_scale:.2f} to {new_scale:.2f}")
-        
-        # Force a redraw
-        self.canvas.update()
-        
-        # Update status bar
-        self.status_bar.showMessage(f"View reset (scale: {new_scale:.2f})")
-        
-        # Return the new scale
-        return new_scale
+        if self.canvas.mode == 0:  # 2D mode
+            # Get current scale factor before reset
+            old_scale = self.canvas.scale_factor
+            
+            # Call the canvas reset_view method
+            new_scale = self.canvas.reset_view()
+            
+            # Debug output
+            print(f"2D view reset: scale changed from {old_scale:.2f} to {new_scale:.2f}")
+            
+            # Update status bar
+            self.status_bar.showMessage(f"2D view reset (scale: {new_scale:.2f})")
+            
+            # Return the new scale
+            return new_scale
+            
+        else:  # 3D mode
+            # Calculate center of all entities
+            min_x = min_y = min_z = float('inf')
+            max_x = max_y = max_z = float('-inf')
+            
+            valid_entities = 0
+            for entity in self.entities:
+                if hasattr(entity, 'x') and hasattr(entity, 'y') and hasattr(entity, 'z'):
+                    min_x = min(min_x, entity.x)
+                    max_x = max(max_x, entity.x)
+                    min_y = min(min_y, entity.y)
+                    max_y = max(max_y, entity.y)
+                    min_z = min(min_z, entity.z)
+                    max_z = max(max_z, entity.z)
+                    valid_entities += 1
+            
+            if valid_entities == 0:
+                print("No valid entities with 3D coordinates")
+                return 1.0
+            
+            # Calculate center point
+            center_x = (min_x + max_x) / 2
+            center_y = (min_y + max_y) / 2
+            center_z = (min_z + max_z) / 2
+            
+            # Calculate span to determine camera distance
+            span_x = max_x - min_x
+            span_y = max_y - min_y
+            span_z = max_z - min_z
+            max_span = max(span_x, span_y, span_z, 100)  # Minimum span of 100
+            
+            # Position camera to view all entities
+            camera_distance = max_span * 2  # Distance based on span
+            
+            # Position camera behind and above the center
+            import numpy as np
+            self.canvas.camera_3d.position = np.array([
+                center_x - camera_distance * 0.5,  # Behind on X
+                center_z + camera_distance * 0.7,  # Above (Z is height)
+                center_y + camera_distance * 0.5   # Back on Y
+            ], dtype=float)
+            
+            # Calculate yaw to look at center
+            dx = center_x - self.canvas.camera_3d.position[0]
+            dy = center_y - self.canvas.camera_3d.position[2]
+            self.canvas.camera_3d.yaw = np.degrees(np.arctan2(dy, dx))
+            
+            # Set pitch to look down at scene
+            self.canvas.camera_3d.pitch = -30.0
+            
+            # Update camera vectors
+            self.canvas.camera_3d.update_vectors()
+            
+            print(f"3D camera positioned at ({self.canvas.camera_3d.position[0]:.0f}, "
+                f"{self.canvas.camera_3d.position[1]:.0f}, {self.canvas.camera_3d.position[2]:.0f})")
+            print(f"Looking at center: ({center_x:.0f}, {center_y:.0f}, {center_z:.0f})")
+            
+            # Update canvas
+            self.canvas.update()
+            
+            # Update status bar
+            self.status_bar.showMessage(f"3D view reset - viewing {valid_entities} entities")
+            
+            return 1.0  # No scale factor in 3D
     
     def action_ground_objects(self):
         """Ground selected objects to the terrain - SIMPLIFIED for 2D only"""
@@ -7461,7 +8574,7 @@ class SimplifiedMapEditor(QMainWindow):
             import xml.etree.ElementTree as ET
             import os
             
-            print(f"ðŸ—ï¸ Creating new sector {sector_id} at grid position ({sector_x}, {sector_y})")
+            print(f"Ã°Å¸Ââ€”Ã¯Â¸Â Creating new sector {sector_id} at grid position ({sector_x}, {sector_y})")
             
             # Generate the sector file path
             if not hasattr(self, 'worldsectors_path') or not self.worldsectors_path:
@@ -7778,6 +8891,46 @@ class SimplifiedMapEditor(QMainWindow):
         except Exception as e:
             print(f"Error finding next sector ID: {e}")
             return 0
+
+    def closeEvent(self, event):
+        """Handle application close event - cleanup resources"""
+        print("Application closing - cleaning up resources...")
+        
+        # Clean up patch manager if it exists
+        if hasattr(self, 'patch_manager'):
+            try:
+                self.patch_manager.cleanup()
+            except Exception as e:
+                print(f"Error cleaning up patch manager: {e}")
+        
+        # Clean up cache manager
+        if hasattr(self, 'cache'):
+            try:
+                from cache_manager import shutdown_cache_manager
+                shutdown_cache_manager()
+                print("Cache manager shutdown complete")
+            except Exception as e:
+                print(f"Error shutting down cache manager: {e}")
+        
+        # Close entity editor if open
+        if hasattr(self, 'entity_editor') and self.entity_editor:
+            try:
+                self.entity_editor.close()
+            except:
+                pass
+        
+        # Clean up any running threads
+        if hasattr(self, 'object_loading_thread') and self.object_loading_thread:
+            try:
+                if self.object_loading_thread.isRunning():
+                    self.object_loading_thread.stop()
+                    self.object_loading_thread.wait(2000)
+            except:
+                pass
+        
+        # Accept the close event
+        event.accept()
+        print("Application cleanup complete")
 
     def _create_sector_from_dialog(self, dialog):
         """Create sector from dialog values"""
@@ -8187,19 +9340,25 @@ class LevelFileConfig:
             "mapsdata": {
                 "enabled": True,
                 "required": True,  # Cannot be disabled
-                "patterns": ["mapsdata.fcb", "mapsdata.xml", "*.mapsdata.xml"],
+                "patterns": ["mapsdata.fcb", "mapsdata.xml", "*.mapsdata.xml", "*.mapsdata.fcb"],
                 "description": "Map Data (Main entities)"
+            },
+            "entitylibrary_full": {
+                "enabled": True,
+                "required": False,
+                "patterns": ["entitylibrary_full.fcb", "entitylibrary_full.xml"],
+                "description": "Entity Library (Entity definitions)"
             },
             "managers": {
                 "enabled": True,
                 "required": False,
-                "patterns": [".managers.fcb", ".managers.xml", "managers.fcb", "managers.xml"],
+                "patterns": [".managers.fcb", ".managers.xml", "managers.fcb", "managers.xml", "*.managers.fcb", "*.managers.xml"],
                 "description": "Managers (Game systems)"
             },
             "omnis": {
                 "enabled": True,
                 "required": False,
-                "patterns": [".omnis.fcb", ".omnis.xml", "omnis.fcb", "omnis.xml"],
+                "patterns": [".omnis.fcb", ".omnis.xml", "omnis.fcb", "omnis.xml", "*.omnis.fcb", "*.omnis.xml"],
                 "description": "Omnis (Universal objects)"
             },
             "sectorsdep": {
@@ -8266,7 +9425,7 @@ class LevelFileConfig:
             self.optional_files[file_type]["enabled"] = enabled
             return True
         return False
-    
+        
 class RotatingLoadingIcon(QLabel):
     """Custom rotating loading icon widget"""
     
@@ -8306,53 +9465,73 @@ class RotatingLoadingIcon(QLabel):
         self.update()
     
     def paintEvent(self, event):
-        """Custom paint to draw background and rotated foreground"""
+        """Paint the rotating loading icon - works in both 2D and 3D modes"""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        
-        # Draw static background
-        bg_x = (self.width() - self.background.width()) // 2
-        bg_y = (self.height() - self.background.height()) // 2
-        painter.drawPixmap(bg_x, bg_y, self.background)
-        
+
+        # Draw background centered
+        if hasattr(self, 'background') and self.background is not None:
+            bg_x = (self.width() - self.background.width()) // 2
+            bg_y = (self.height() - self.background.height()) // 2
+            painter.drawPixmap(bg_x, bg_y, self.background)
+
         # Draw rotated foreground
-        painter.translate(self.width() / 2, self.height() / 2)
-        painter.rotate(self.rotation_angle)
-        painter.translate(-self.rotating.width() / 2, -self.rotating.height() / 2)
-        painter.drawPixmap(0, 0, self.rotating)
-    
+        if hasattr(self, 'rotating') and self.rotating is not None:
+            painter.save()
+            painter.translate(self.width() / 2, self.height() / 2)
+            painter.rotate(self.rotation_angle)
+            painter.translate(-self.rotating.width() / 2, -self.rotating.height() / 2)
+            painter.drawPixmap(0, 0, self.rotating)
+            painter.restore()
+
+        painter.end()
+
     def stop(self):
         """Stop the rotation"""
         self.timer.stop()
 
 class EnhancedProgressDialog(QDialog):
-    """Reusable enhanced progress dialog with loading icon and log"""
+    """Enhanced progress dialog with rotating loading icon and log - auto-selects icon based on game mode"""
     
     cancelled = pyqtSignal()  # Signal for cancellation
     
-    def __init__(self, title, parent=None):
+    def __init__(self, title, parent=None, game_mode="avatar"):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
         self.setMinimumSize(800, 400)
         
+        # DEBUG: Print received game mode
+        print(f"EnhancedProgressDialog: Received game_mode = '{game_mode}'")
+        
         layout = QVBoxLayout(self)
         
-        # Add loading icon at the top
+        # Add rotating icons at the top
         icon_layout = QHBoxLayout()
         icon_layout.addStretch()
         
-        background_path = "default_i3.png"
-        rotating_path = "default_i5.png"
+        # Select icon paths based on game mode
+        if game_mode == "farcry2":
+            # FC2: Use same image for background and rotating (single icon that rotates)
+            background_path = "loading_logo2.png"
+            rotating_path = "loading_logo3.png"
+            print(f"EnhancedProgressDialog: Using FC2 icons: {background_path}")
+        else:  # avatar
+            # Avatar: Use default icons
+            background_path = "default_i3.png"
+            rotating_path = "default_i5.png"
+            print(f"EnhancedProgressDialog: Using Avatar icons: {background_path}, {rotating_path}")
         
+        # Rotating icons
         self.loading_icon = RotatingLoadingIcon(background_path, rotating_path)
         icon_layout.addWidget(self.loading_icon)
         icon_layout.addStretch()
+        
         layout.addLayout(icon_layout)
         
         # Status label
-        self.status_label = QLabel("Initializing, Please wait.")
+        self.status_label = QLabel("Initializing, please wait...")
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.status_label)
         
@@ -8384,51 +9563,43 @@ class EnhancedProgressDialog(QDialog):
         layout.addWidget(self.cancel_button)
         
         self.was_cancelled = False
-        self.is_complete = False  # NEW: track if operation completed
+        self.is_complete = False  # Track if operation completed
         self.cancel_button.clicked.connect(self.on_cancel)
-    
+
     def closeEvent(self, event):
-        """Handle window close button (X) - treat it like cancel"""
+        shutdown_cache_manager()
         if not self.was_cancelled and not self.is_complete:
-            # Operation still running - trigger cancellation
             self.on_cancel()
             event.ignore()
         else:
-            # Operation cancelled or completed - allow close
             event.accept()
-    
+
     def on_cancel(self):
-        """Handle cancel button - emit signal instead of closing immediately"""
         if not self.was_cancelled:
             self.was_cancelled = True
             self.cancel_button.setEnabled(False)
             self.cancel_button.setText("Cancelling...")
             self.append_log("Cancellation requested...")
             self.cancelled.emit()
-    
+
     def set_status(self, text):
-        """Update status label"""
         self.status_label.setText(text)
-    
+
     def set_progress(self, value):
-        """Update progress bar (0-100)"""
         self.progress_bar.setValue(int(value))
-    
+
     def append_log(self, message):
-        """Append message to log box"""
-        # Strip any empty messages
         if not message or not message.strip():
             return
-        
         self.log_box.append(message)
-        # Auto-scroll to bottom
         scrollbar = self.log_box.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
-    
+
     def stop_icon(self):
-        """Stop the rotating icon"""
-        self.loading_icon.stop()
-    
+        """Stop both rotating icons"""
+        if hasattr(self, "loading_icon"):
+            self.loading_icon.stop()
+
     def mark_complete(self):
         """Mark operation as complete - allows dialog to close"""
         self.is_complete = True

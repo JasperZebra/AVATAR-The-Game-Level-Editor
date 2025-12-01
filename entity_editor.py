@@ -533,9 +533,12 @@ class EntityEditorWindow(QDialog):
         pos_widget = QWidget(self)
         pos_layout = QHBoxLayout(pos_widget)
         pos_layout.setContentsMargins(0, 0, 0, 0)
+        pos_layout.setSpacing(5)  # ADD THIS LINE
         
         # X coordinate
-        pos_layout.addWidget(QLabel("X:", self))
+        x_label = QLabel("X:", self)  # CHANGE: Store in variable
+        x_label.setMinimumWidth(20)  # ADD THIS LINE
+        pos_layout.addWidget(x_label)
         x_input = DecimalInput(
             self,
             lambda: entity.x,
@@ -543,10 +546,13 @@ class EntityEditorWindow(QDialog):
         )
         x_input.changed.connect(self.on_position_changed)
         x_input.update_value()
+        x_input.setMinimumWidth(60)  # ADD THIS LINE
         pos_layout.addWidget(x_input)
         
         # Y coordinate
-        pos_layout.addWidget(QLabel("Y:", self))
+        y_label = QLabel("Y:", self)  # CHANGE: Store in variable
+        y_label.setMinimumWidth(20)  # ADD THIS LINE
+        pos_layout.addWidget(y_label)
         y_input = DecimalInput(
             self,
             lambda: entity.y,
@@ -554,10 +560,13 @@ class EntityEditorWindow(QDialog):
         )
         y_input.changed.connect(self.on_position_changed)
         y_input.update_value()
+        y_input.setMinimumWidth(60)  # ADD THIS LINE
         pos_layout.addWidget(y_input)
         
         # Z coordinate
-        pos_layout.addWidget(QLabel("Z:", self))
+        z_label = QLabel("Z:", self)  # CHANGE: Store in variable
+        z_label.setMinimumWidth(20)  # ADD THIS LINE
+        pos_layout.addWidget(z_label)
         z_input = DecimalInput(
             self,
             lambda: entity.z,
@@ -565,6 +574,7 @@ class EntityEditorWindow(QDialog):
         )
         z_input.changed.connect(self.on_position_changed)
         z_input.update_value()
+        z_input.setMinimumWidth(60)  # ADD THIS LINE
         pos_layout.addWidget(z_input)
         
         pos_layout.addStretch()
@@ -1308,6 +1318,7 @@ class EntityEditorWindow(QDialog):
         widget = QWidget(self)
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)  # ADD THIS LINE - adds spacing between widgets
         
         # Parse current Vector3 value
         vector_str = field_elem.get(value_attr) or "0,0,0"
@@ -1319,7 +1330,7 @@ class EntityEditorWindow(QDialog):
         # Create individual inputs for X, Y, Z
         for i, (axis, value) in enumerate(zip(['X', 'Y', 'Z'], [x, y, z])):
             label = QLabel(f"{axis}:", self)
-            label.setMinimumWidth(15)
+            label.setMinimumWidth(20)  # CHANGE FROM 15 to 20 or more
             
             input_field = DecimalInput(
                 self,
@@ -1328,6 +1339,7 @@ class EntityEditorWindow(QDialog):
             )
             input_field.changed.connect(self.schedule_auto_save)
             input_field.update_value()
+            input_field.setMinimumWidth(60)  # ADD THIS LINE - ensures input fields have minimum width
             
             layout.addWidget(label)
             layout.addWidget(input_field)

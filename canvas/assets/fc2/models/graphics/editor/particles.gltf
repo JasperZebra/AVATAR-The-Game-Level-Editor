@@ -1,0 +1,204 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        3
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "particles",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "particles_LOD0"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        2
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-0406200733046713.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "icontexture",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAICAYAAABJYvnfAAAAT0lEQVR4nGN0rPr/nwEfaHXFK73v2j+88gza+/BKb2DAb33gH/zG/2/BL89Qj1+aiWGEAyaGEQ6YGEY4YGIY4YCJYYQDJoYRDpgG2gEDDQAkdgwME4lAhwAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 2,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 130,
+      "type": "VEC3",
+      "min": [
+        -0.24054689146578312,
+        -0.22852259874343872,
+        -0.0012817773967981339
+      ],
+      "max": [
+        0.2607501447200775,
+        0.25168614741414785,
+        0.4708090452477336
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 130,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 130,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 130,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 174,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 128
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 128,
+      "byteLength": 1560,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1688,
+      "byteLength": 1040,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2728,
+      "byteLength": 1040,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3768,
+      "byteLength": 2080,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5848,
+      "byteLength": 348,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 6196,
+      "uri": "particles.bin"
+    }
+  ]
+}

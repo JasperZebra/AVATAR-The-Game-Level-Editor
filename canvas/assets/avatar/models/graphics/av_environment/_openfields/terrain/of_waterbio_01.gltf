@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "OF_Waterbio_01"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\NPAULIN-M-2008061640153998.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "of_waterbio_01_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,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"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 32,
+      "type": "VEC3",
+      "min": [
+        -1.215552231296897,
+        -1.7029938641935587,
+        -0.038575395941734314
+      ],
+      "max": [
+        1.9514755681157112,
+        0.8119144253432751,
+        0.06048768572509289
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 32,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 32,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 32,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 48,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 384,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 448,
+      "byteLength": 256,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 704,
+      "byteLength": 256,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 960,
+      "byteLength": 512,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1472,
+      "byteLength": 96,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 1568,
+      "uri": "of_waterbio_01.bin"
+    }
+  ]
+}

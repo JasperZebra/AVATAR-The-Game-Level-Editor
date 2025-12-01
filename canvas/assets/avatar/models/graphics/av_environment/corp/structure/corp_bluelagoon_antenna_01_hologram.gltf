@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "agoon_Antenna_01_Hologram"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\JDAPRATO-M-2008070734472294.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "corp_oxyammopod_01_hologram_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,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"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 895,
+      "type": "VEC3",
+      "min": [
+        -0.7550584422424436,
+        -0.823541977442801,
+        -0.23657948523759842
+      ],
+      "max": [
+        0.8009277619421482,
+        0.7324442267417908,
+        2.287881097756326
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 895,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 895,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 895,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 1902,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 10740,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10804,
+      "byteLength": 7160,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 17964,
+      "byteLength": 7160,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 25124,
+      "byteLength": 14320,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 39444,
+      "byteLength": 3804,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 43248,
+      "uri": "corp_bluelagoon_antenna_01_hologram.bin"
+    }
+  ]
+}

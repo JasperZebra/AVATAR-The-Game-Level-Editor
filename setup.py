@@ -22,9 +22,10 @@ def collect_files(directory):
 # List all directories you want to include
 directories_to_include = [
     'canvas',               # Canvas-related modules and resources
-    'objects',              # Entity collections for import/export
     'tools',                # FCBConverter and other conversion tools
-    'icon',
+    'icon',                 # Icons for the application
+    'cache',                # Cache directory
+    'thumbnails',           # Thumbnails directory
 ]
 
 # Collect all files from these directories
@@ -36,13 +37,19 @@ for directory in directories_to_include:
 # Add individual Python files that are part of your level editor
 root_files = [
     'all_in_one_copy_paste.py',
+    'cache_manager.py',
+    'check_exe_arch.py',
     'data_models.py',
     'entity_editor.py',
     'entity_export_import.py',
     'file_converter.py',
+    'game_selector.py',
     'hash_parser.py',
     'init.py',
+    'loading_logo2.png',
+    'loading_logo3.png',
     'main.py',
+    'set_patch_folder.py',
     'simplified_map_editor.py',
     '__init__.py',
     'camera_controller.py',
@@ -90,6 +97,7 @@ build_options = {
         'tempfile', 'threading', 'queue', 'weakref', 'gc', 'codecs', 'locale', 'platform',
         'socket', 'urllib', 'urllib.parse', 'decimal', 'uuid', 'hashlib', 'base64',
         'binascii', 'io', 'contextlib', 'functools', 'operator', 'keyword', 'token', 'tokenize',
+        'datetime', 'pickle',
         
         # Multiprocessing packages (comprehensive)
         'multiprocessing',
@@ -117,18 +125,26 @@ build_options = {
         # Numerical packages
         'numpy',
         
+        # Image processing
+        'PIL',
+        'PIL.Image',
+        
         # Other dependencies
         'dataclasses', 'pkg_resources',
         
-        # Root level modules (only the ones actually in root)
+        # Root level modules
         'all_in_one_copy_paste',
+        'cache_manager',
+        'check_exe_arch',
         'data_models',
         'entity_editor',
         'entity_export_import',
         'file_converter',
+        'game_selector',
         'hash_parser',
         'init',
         'main',
+        'set_patch_folder',
         'simplified_map_editor',
         
         # Canvas modules
@@ -136,12 +152,10 @@ build_options = {
         'canvas.map_canvas_gpu', 'canvas.opengl_utils', 'canvas.entity_renderer',
         'canvas.grid_renderer', 'canvas.icon_renderer', 'canvas.gizmo_renderer', 
         'canvas.camera_controller', 'canvas.input_handler',
+        'canvas.model_loader', 'canvas.terrain_renderer',
         
         # Tools package (contains converters including FCBConverter)
         'tools',
-        
-        # Objects package
-        'objects',
     ],
     'excludes': [
         'test', 'unittest', 'tkinter', 'matplotlib', 'scipy',

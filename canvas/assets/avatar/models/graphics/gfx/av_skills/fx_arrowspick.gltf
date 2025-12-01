@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "FX_ArrowsPick"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\NSALAS-M-2009021163809406.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "navi_arrow_mesh",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAACACAYAAAAClekiAAAFhUlEQVR4nO1YYW/TRhh+cmeHSxOCQ9oopV1paGFJaSkaqGzVRgEVWo3tA/u0b5OmSfsj+wHbvuwHjG+Tpkn7BhKogw2hARNoGkxtgQFTu5G1SevU18R2pnPckrhxbLcrTBuP9Oacu/eee3z23Xt+gZd4CSC0CZ+q74l7/6O2D394nDZPnWWf2UQbBiQeHO1eg5BWjYOvhS2CU++wfgDCNkByVrBnNb16GXvS3RFzd4fZxxio8OccFd8K3ppgGftSjN4X6BbePLPe2cLEe9FgBAAEQT3JhD8CZlkomqTpTDbSyTnoibNRGk8i1dmLg74VTJyLZluo8yTINql7FcAB3woA5DalgKvA6EkWPvwGSc/Pa2vvfrWrR47lhtiQXwVDLvV9MkPci4C0UJwAoPt1bsDwiHi+AJWsB91iLTDsMMpIzT1Et/i/KGnWEv71Fgcx8QB6gLXgwOyN7/kXnGPZD8EsgJn6ihtX+QUA952OpAXBOn68ysXoggB+CFavT/Hyk4fmdO5wBCwGXL7Ip+fzuDefR9mvghnHLcw4VXkR4OI3pYY5cANp0SYIpu3rpqM3fQ84r23dK6oxW8hrIa7DMHSsQIcJwAiiwIkNnb0I+h3/aVACJ4lvBaZlFBUwqLYPs0uylTloCoJtJpj1IpCa1Fnx39CxoKlWdF4L66Rujnwr8ARxqW/YttxCeysC35Bc6jmqCEOHzgswjIr1EgV+lX2B+HNr3B83Q9AfhIAKY4zGO9OR1NxjTviKQba6FmaCKAgEgm14DwzrN4Q4JITmnsD86WbFhGSvAf0FzMHMtk6i5HJWpkyGwhik+cdYhA7N7TuBbFUBeeEEkrOC156zUSojX1BhaJwXASs+bI8C8q8kIMIosMKAaiTGdgDY8VwVvPj9wBQ/fNVYmMtrqpKA0iJ+4D85B9L61TI4lhIKdkFCbL12k3uiK4hbw9QFvjUCv7FRapE/WCqoWFTSbJBJVqywztBcb9wbCbYI4tOvae5gexRwXrNjJ1laUUChc9meq02dD7KBFQQF8Wi/Z5fBg2t5FcuFvJU3qh4YlKuiFBZUwfYfdYlbw7VL/haT5Kxgz87pC3wZmsgjmYACyfItP7/94J8imLbLnsBrgXNwDYhrOnBgSBZ7Ych5/34UeIK4NRw9znJ+srjEY4ABr9QxcVYwBllYMoH2gf1IF54CfBmrTEKybr/0VjA2yU77yeyRpp0n2PiJSTa+9j+TC+cyWTnrSUBC1v3uG5tkHzs30kxWznkSmFVU336XHe7pZyNMiUSEqUXDUItGqmMPPZcZZD0tCeQwWO4IGwaQdjp299JeAHtbEkTjVhTe0NlGb9de0tuSAPbnzsDRSFOGrr10TBHh3o2AMSJlBti+xT80QK9ZOEypsFIJNNFB90UVeacbQaizm2aVpJX2bECpCER3WbY7rtCEq4LOV2h7IomuZvIFCYCIM7dA6q7FohEpjw0TIEa3Sdqc7VI9yehp1s+iVGYxGqoCBlcNGo9bxKFkO8FfT822nW1GiknPFhipIxPSuxLpsMxVQ3Q2uWo9FOFcTaYokh0kNjwiv970FgaPiCCM7sX5MsTIojOLNaTPBElY+NiDbZxEAE/ssqKkw3SNINlBQu2p2vXwSLjbOQemuPj5ZqV46wq/XDWQF6FsdNwKZ/tpGKRQNDVIiLTvodqtaxU1c1Cmd2/X0stSHdnS11/yry59y6dq0Vj5dHSc7Qesj87z16esSHVo5pfylbu3K4/qFdRjybb6YHrn808K50V57Dg79Ofvxm/1HST4wx0Ahevf8TtcRbElAVetib2/XMRCoYAHpRIecdVSJVDwHIpJILZlxs6wD/pysusRD822bCY1Plr7S7Yhgxc0Mpk+fF7if46/AQpKonkbeZ96AAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 64,
+      "type": "VEC3",
+      "min": [
+        -0.567278053611517,
+        -0.3047578353434801,
+        -0.5351420631632209
+      ],
+      "max": [
+        0.5958738969638944,
+        0.21372112166136503,
+        0.540513320825994
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 64,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 64,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 64,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 96,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 768,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 832,
+      "byteLength": 512,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1344,
+      "byteLength": 512,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1856,
+      "byteLength": 1024,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2880,
+      "byteLength": 192,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 3072,
+      "uri": "fx_arrowspick.bin"
+    }
+  ]
+}

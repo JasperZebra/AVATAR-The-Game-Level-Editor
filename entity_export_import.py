@@ -714,7 +714,7 @@ class EntityImportDialog(QDialog):
         return new_id
 
     def add_entity_xml_to_sector(self, entity_xml, sector_file_path):
-        """Add entity XML directly to the target worldsector file"""
+        """Add entity XML to MissionLayer - prefers 'outside_entity', falls back to 'main'"""
         try:
             # Load the target file if not already loaded
             if not hasattr(self.parent_editor, 'worldsectors_trees'):
@@ -731,17 +731,113 @@ class EntityImportDialog(QDialog):
             tree = self.parent_editor.worldsectors_trees[sector_file_path]
             root = tree.getroot()
             
-            # Find MissionLayer
-            mission_layer = root.find(".//object[@name='MissionLayer']")
-            if mission_layer is None:
+            # Find ALL MissionLayers
+            mission_layers = root.findall(".//object[@name='MissionLayer']")
+            if not mission_layers:
                 print(f"No MissionLayer found in {sector_file_path}")
                 return False
             
-            # Add entity XML directly to MissionLayer
-            mission_layer.append(entity_xml)
+            print(f"Found {len(mission_layers)} MissionLayer(s) in file")
             
-            # Save the file
+            # Search for MissionLayers - try "outside_entity" first, then "main"
+            target_mission_layer = None
+            target_path_id = None
+            
+            for preferred_id in ["outside_entity", "main"]:
+                for mission_layer in mission_layers:
+                    # Check text_PathId field (FCBConverter format)
+                    path_id_field = mission_layer.find("field[@name='text_PathId']")
+                    if path_id_field is not None:
+                        path_id_value = path_id_field.get('value-String', '')
+                        if path_id_value == preferred_id:
+                            target_mission_layer = mission_layer
+                            target_path_id = preferred_id
+                            print(f"✅ Found target MissionLayer: {preferred_id}")
+                            break
+                    
+                    # Also check Dunia Tools format (value element)
+                    path_id_elem = mission_layer.find("value[@name='text_PathId']")
+                    if path_id_elem is not None:
+                        path_id_value = path_id_elem.text or ''
+                        if path_id_value == preferred_id:
+                            target_mission_layer = mission_layer
+                            target_path_id = preferred_id
+                            print(f"✅ Found target MissionLayer: {preferred_id}")
+                            break
+                
+                # If we found a layer, stop searching
+                if target_mission_layer is not None:
+                    break
+            
+            if target_mission_layer is None:
+                print(f"❌ No MissionLayer with PathId='outside_entity' or 'main' found in {sector_file_path}")
+                print(f"Available MissionLayers:")
+                for ml in mission_layers:
+                    path_field = ml.find("field[@name='text_PathId']")
+                    if path_field is not None:
+                        print(f"  - {path_field.get('value-String', 'unknown')}")
+                    else:
+                        path_elem = ml.find("value[@name='text_PathId']")
+                        if path_elem is not None:
+                            print(f"  - {path_elem.text or 'unknown'}")
+                return False
+            
+            # Count existing entities BEFORE adding
+            existing_entities = target_mission_layer.findall("object[@name='Entity']")
+            print(f"MissionLayer '{target_path_id}' currently has {len(existing_entities)} entities")
+            
+            # CRITICAL FIX: Create truly independent copy by converting to string and parsing back
+            print(f"🔧 Creating independent copy of entity XML...")
+            xml_string = ET.tostring(entity_xml, encoding='unicode')
+            entity_copy = ET.fromstring(xml_string)
+            
+            # IMPORTANT: Insert the entity at the END of the MissionLayer's children
+            # Find the last Entity index to insert after all other entities
+            last_entity_index = -1
+            for i, child in enumerate(target_mission_layer):
+                if child.tag == 'object' and child.get('name') == 'Entity':
+                    last_entity_index = i
+            
+            if last_entity_index >= 0:
+                # Insert after the last entity
+                insert_position = last_entity_index + 1
+                print(f"🔧 Inserting entity at position {insert_position} (after last entity)")
+                target_mission_layer.insert(insert_position, entity_copy)
+            else:
+                # No entities yet, append at end
+                print(f"🔧 Appending entity (first entity in layer)")
+                target_mission_layer.append(entity_copy)
+            
+            # Verify the entity was added correctly
+            new_entities = target_mission_layer.findall("object[@name='Entity']")
+            print(f"MissionLayer '{target_path_id}' now has {len(new_entities)} entities")
+            
+            if len(new_entities) <= len(existing_entities):
+                print(f"❌ Entity was not added correctly!")
+                print(f"Expected: {len(existing_entities) + 1}, Got: {len(new_entities)}")
+                
+                # Debug: Check what's in the MissionLayer
+                print(f"🔍 Debug - MissionLayer children:")
+                for i, child in enumerate(target_mission_layer):
+                    print(f"  {i}: {child.tag}, name={child.get('name', 'N/A')}")
+                
+                return False
+            
+            print(f"✅ Successfully added entity to '{target_path_id}' MissionLayer")
+            
+            # CRITICAL: Use indent() to properly format the XML before saving
+            print(f"🔧 Formatting XML with proper indentation...")
+            try:
+                # Python 3.9+ has indent() built-in
+                ET.indent(tree, space="  ")
+            except AttributeError:
+                # Fallback for older Python versions - manual indentation
+                self._indent_xml_tree(root)
+            
+            # Save the file immediately
+            print(f"💾 Writing to file: {sector_file_path}")
             tree.write(sector_file_path, encoding='utf-8', xml_declaration=True)
+            print(f"💾 Saved {os.path.basename(sector_file_path)}")
             
             # Mark as modified
             if not hasattr(self.parent_editor, 'worldsectors_modified'):
@@ -751,10 +847,26 @@ class EntityImportDialog(QDialog):
             return True
             
         except Exception as e:
-            print(f"Error adding entity to sector: {e}")
+            print(f"❌ Error adding entity to sector: {e}")
             import traceback
             traceback.print_exc()
             return False
+
+    def _indent_xml_tree(self, elem, level=0):
+        """Fallback XML indentation for Python < 3.9"""
+        i = "\n" + level * "  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "  "
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+            for child in elem:
+                self._indent_xml_tree(child, level + 1)
+            if not child.tail or not child.tail.strip():
+                child.tail = i
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
 
     def load_collections(self):
         """Load available entity collections"""

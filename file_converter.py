@@ -1,6 +1,8 @@
 import multiprocessing
 from multiprocessing import Pool, cpu_count
 
+from cache_manager import get_cache_manager
+
 import sys
 import subprocess
 
@@ -92,7 +94,7 @@ class FileConverter:
             print(f"Check converter_debug.txt for details")
 
     def convert_data_fcb_files(self, worldsectors_path, progress_callback=None):
-        """Convert .data.fcb files to .converted.xml format with optional multiprocessing"""
+        """Convert .data.fcb files to .converted.xml format with caching and optional multiprocessing"""
         if not self.conversion_enabled:
             msg = "File conversion is disabled."
             print(msg)
@@ -102,6 +104,9 @@ class FileConverter:
                 except TypeError:
                     progress_callback(1.0)
             return 0, 0, []
+        
+        # Get cache manager
+        cache = get_cache_manager()
         
         # Helper to log messages to both console and log box
         def log(message):
@@ -129,17 +134,23 @@ class FileConverter:
                     pass
             return 0, 0, []
         
-        # Filter out files that already have .converted.xml
+        # ============ CACHE INTEGRATION HERE ============
+        # Filter out files that have valid cached conversions
         files_to_convert = []
+        cached_count = 0
+        
         for fcb_file in data_fcb_files:
-            converted_xml_file = fcb_file + '.converted.xml'
-            if os.path.exists(converted_xml_file):
-                log(f"Converted XML already exists for: {os.path.basename(fcb_file)}")
+            if cache.is_fcb_conversion_cached(fcb_file):
+                log(f"âœ“ Using cached conversion for: {os.path.basename(fcb_file)}")
+                cached_count += 1
             else:
                 files_to_convert.append(fcb_file)
         
+        if cached_count > 0:
+            log(f"Cache hit: {cached_count} files already converted (skipped)")
+        
         if not files_to_convert:
-            log("No FCB files need conversion - all already have converted XML files")
+            log("âœ“ All FCB files already converted (using cache)")
             if progress_callback:
                 try:
                     progress_callback(1.0)
@@ -147,18 +158,23 @@ class FileConverter:
                     pass
             return 0, 0, []
         
-        log(f"Converting {len(files_to_convert)} .data.fcb files, Please Wait.")
+        log(f"Converting {len(files_to_convert)} new/modified .data.fcb files, Please Wait.")
+        # ============ END CACHE INTEGRATION ============
         
         # Use multiprocessing for multiple files, sequential for single file
-        use_multiprocessing = True  # Assuming this is defined somewhere
+        use_multiprocessing = True
         if use_multiprocessing and len(files_to_convert) > 1:
-            return self._convert_multiprocessing(files_to_convert, progress_callback)
+            success_count, error_count, errors = self._convert_multiprocessing(files_to_convert, progress_callback, cache)
         else:
-            return self._convert_sequential(files_to_convert, progress_callback)
+            success_count, error_count, errors = self._convert_sequential(files_to_convert, progress_callback, cache)
         
-    # NEW METHOD - add this to FileConverter class
-    def _convert_sequential(self, files_to_convert, progress_callback):
-        """Sequential conversion (original behavior)"""
+        # Save cache to disk after conversion
+        cache._save_fcb_cache()
+        
+        return success_count, error_count, errors
+        
+    def _convert_sequential(self, files_to_convert, progress_callback, cache=None):
+        """Sequential conversion with caching support"""
         success_count = 0
         error_count = 0
         errors = []
@@ -169,6 +185,12 @@ class FileConverter:
                 
                 if self.convert_fcb_to_converted_xml(fcb_file):
                     success_count += 1
+                    
+                    # ============ CACHE INTEGRATION HERE ============
+                    # Mark file as successfully converted in cache
+                    if cache:
+                        cache.mark_fcb_converted(fcb_file)
+                    # ============ END CACHE INTEGRATION ============
                 else:
                     error_count += 1
                     errors.append(f"Failed to convert: {os.path.basename(fcb_file)}")
@@ -190,8 +212,8 @@ class FileConverter:
         print(f"Data FCB conversion complete: {success_count} successful, {error_count} failed")
         return success_count, error_count, errors
 
-    def _convert_multiprocessing(self, files_to_convert, progress_callback):
-        """Parallel conversion using multiprocessing with cancellation support"""
+    def _convert_multiprocessing(self, files_to_convert, progress_callback, cache=None):
+        """Parallel conversion using multiprocessing with caching and cancellation support"""
         from multiprocessing import Pool, cpu_count
         
         file_count = len(files_to_convert)
@@ -240,6 +262,12 @@ class FileConverter:
                 # Count results
                 if result['success']:
                     success_count += 1
+                    
+                    # ============ CACHE INTEGRATION HERE ============
+                    # Mark file as successfully converted in cache
+                    if cache and 'fcb_file' in result:
+                        cache.mark_fcb_converted(result['fcb_file'])
+                    # ============ END CACHE INTEGRATION ============
                 else:
                     error_count += 1
                     if result.get('error'):
@@ -274,7 +302,7 @@ class FileConverter:
                     pool.join()
                 except:
                     pass
-            return self._convert_sequential(files_to_convert, progress_callback)
+            return self._convert_sequential(files_to_convert, progress_callback, cache)
         
         finally:
             # Always clean up the pool
@@ -314,7 +342,7 @@ class FileConverter:
         return success_count, error_count, errors
 
     def convert_fcb_to_converted_xml(self, fcb_path):
-        """Optimized single file conversion"""
+        """Optimized single file conversion with detailed diagnostics"""
         try:
             converted_xml_path = fcb_path + ".converted.xml"
             
@@ -324,7 +352,22 @@ class FileConverter:
             
             print(f"Converting FCB to converted XML: {os.path.basename(fcb_path)} -> {os.path.basename(converted_xml_path)}, Please Wait.")
             
+            # Log the directory contents BEFORE conversion
+            fcb_dir = os.path.dirname(fcb_path)
+            print(f"Directory before conversion: {fcb_dir}")
+            before_files = set(os.listdir(fcb_dir))
+            print(f"Files before ({len(before_files)} total): {list(before_files)[:5]}...")  # Show first 5
+            
+            # Check if source file exists
+            if not os.path.exists(fcb_path):
+                print(f"ERROR: Source FCB file does not exist: {fcb_path}")
+                return False
+            
+            fcb_size_before = os.path.getsize(fcb_path)
+            print(f"Source FCB size before: {fcb_size_before} bytes")
+            
             # Run the FCB converter
+            print(f"Running converter: {self.fcb_converter_path} {fcb_path}")
             process = subprocess.run(
                 [self.fcb_converter_path, fcb_path],
                 stdout=subprocess.PIPE,
@@ -333,14 +376,42 @@ class FileConverter:
                 timeout=30
             )
             
-            if process.returncode == 0 and os.path.exists(converted_xml_path):
+            print(f"Converter return code: {process.returncode}")
+            if process.stdout:
+                print(f"Converter stdout: {process.stdout}")
+            if process.stderr:
+                print(f"Converter stderr: {process.stderr}")
+            
+            # Log the directory contents AFTER conversion
+            after_files = set(os.listdir(fcb_dir))
+            new_files = after_files - before_files
+            deleted_files = before_files - after_files
+            
+            print(f"Files after ({len(after_files)} total)")
+            print(f"New files created: {new_files if new_files else 'NONE'}")
+            print(f"Files deleted: {deleted_files if deleted_files else 'NONE'}")
+            
+            # Check if source FCB still exists
+            if not os.path.exists(fcb_path):
+                print(f"WARNING: Source FCB was DELETED by converter!")
+            else:
+                fcb_size_after = os.path.getsize(fcb_path)
+                if fcb_size_after != fcb_size_before:
+                    print(f"WARNING: Source FCB size changed: {fcb_size_before} -> {fcb_size_after}")
+            
+            # Check for expected output
+            if os.path.exists(converted_xml_path):
                 xml_size = os.path.getsize(converted_xml_path)
-                print(f"Successfully converted: {os.path.basename(converted_xml_path)} ({xml_size} bytes)")
+                print(f"SUCCESS: Found expected output: {os.path.basename(converted_xml_path)} ({xml_size} bytes)")
                 return True
             else:
-                print(f"Conversion failed. Return code: {process.returncode}")
-                if process.stderr:
-                    print(f"Error: {process.stderr}")
+                print(f"ERROR: Expected output not found: {converted_xml_path}")
+                
+                # Check if ANY new XML files were created
+                for new_file in new_files:
+                    if new_file.endswith('.xml'):
+                        print(f"Found unexpected XML file: {new_file}")
+                
                 return False
                 
         except subprocess.TimeoutExpired:
@@ -348,6 +419,8 @@ class FileConverter:
             return False
         except Exception as e:
             print(f"Error converting FCB file {fcb_path}: {e}")
+            import traceback
+            traceback.print_exc()
             return False
             
     def convert_fcb_to_xml(self, fcb_path):
@@ -433,23 +506,23 @@ class FileConverter:
                 
                 # DEBUG: Check if we need to rename the file to replace the original
                 if expected_new_fcb_path != original_fcb_path:
-                    print(f"   🔄 New FCB created: {os.path.basename(expected_new_fcb_path)}")
-                    print(f"   🎯 Should replace: {os.path.basename(original_fcb_path)}")
+                    print(f"   ðŸ”„ New FCB created: {os.path.basename(expected_new_fcb_path)}")
+                    print(f"   ðŸŽ¯ Should replace: {os.path.basename(original_fcb_path)}")
                     
                     # Check if original still exists
                     if os.path.exists(original_fcb_path):
                         original_size = os.path.getsize(original_fcb_path)
-                        print(f"   📁 Original FCB still exists: {original_size} bytes")
+                        print(f"   ðŸ“ Original FCB still exists: {original_size} bytes")
                     else:
-                        print(f"   📁 Original FCB doesn't exist")
+                        print(f"   ðŸ“ Original FCB doesn't exist")
                         
                     # Compare file sizes if both exist
                     if os.path.exists(original_fcb_path):
                         original_size = os.path.getsize(original_fcb_path)
                         if fcb_size != original_size:
-                            print(f"   📊 Size difference: {fcb_size - original_size} bytes")
+                            print(f"   ðŸ“Š Size difference: {fcb_size - original_size} bytes")
                         else:
-                            print(f"   ⚠️  Same size as original - changes might not be included")
+                            print(f"   âš ï¸  Same size as original - changes might not be included")
                 
                 return expected_new_fcb_path
             else:
@@ -462,9 +535,9 @@ class FileConverter:
                 # Check if any _new file was created despite failure
                 if os.path.exists(expected_new_fcb_path):
                     size = os.path.getsize(expected_new_fcb_path)
-                    print(f"   📁 _new file exists despite failure: {size} bytes")
+                    print(f"   ðŸ“ _new file exists despite failure: {size} bytes")
                 else:
-                    print(f"   📁 No _new file created")
+                    print(f"   ðŸ“ No _new file created")
                     
                 return False
                 
@@ -480,12 +553,12 @@ class FileConverter:
         deleted_files = []
         failed_files = []
         
-        print(f"🗑 Deleting {len(fcb_paths)} original FCB files, Please wait.")
+        print(f"ðŸ—‘ Deleting {len(fcb_paths)} original FCB files, Please wait.")
         
         for fcb_path in fcb_paths:
             try:
                 if not os.path.exists(fcb_path):
-                    print(f"   ⚠ File already missing: {os.path.basename(fcb_path)}")
+                    print(f"   âš  File already missing: {os.path.basename(fcb_path)}")
                     continue
                 
                 # Get file info before deletion
@@ -496,7 +569,7 @@ class FileConverter:
                     current_attrs = os.stat(fcb_path).st_mode
                     os.chmod(fcb_path, current_attrs | 0o200)  # Add write permission
                 except Exception as chmod_error:
-                    print(f"   ⚠ Could not change permissions for {os.path.basename(fcb_path)}: {chmod_error}")
+                    print(f"   âš  Could not change permissions for {os.path.basename(fcb_path)}: {chmod_error}")
                 
                 # Delete the file
                 os.remove(fcb_path)
@@ -504,21 +577,21 @@ class FileConverter:
                 # Verify deletion
                 if not os.path.exists(fcb_path):
                     deleted_files.append(fcb_path)
-                    print(f"   ✓ Deleted: {os.path.basename(fcb_path)} ({file_size} bytes)")
+                    print(f"   âœ“ Deleted: {os.path.basename(fcb_path)} ({file_size} bytes)")
                 else:
                     failed_files.append(fcb_path)
-                    print(f"   ❌ Deletion failed: {os.path.basename(fcb_path)}")
+                    print(f"   âŒ Deletion failed: {os.path.basename(fcb_path)}")
                     
             except PermissionError as perm_error:
                 failed_files.append(fcb_path)
-                print(f"   ❌ Permission denied: {os.path.basename(fcb_path)} - {perm_error}")
-                print(f"   💡 Make sure the game is closed and no other programs are using the file")
+                print(f"   âŒ Permission denied: {os.path.basename(fcb_path)} - {perm_error}")
+                print(f"   ðŸ’¡ Make sure the game is closed and no other programs are using the file")
                 
             except Exception as e:
                 failed_files.append(fcb_path)
-                print(f"   ❌ Error deleting {os.path.basename(fcb_path)}: {e}")
+                print(f"   âŒ Error deleting {os.path.basename(fcb_path)}: {e}")
         
-        print(f"📊 Deletion summary: {len(deleted_files)} deleted, {len(failed_files)} failed")
+        print(f"ðŸ“Š Deletion summary: {len(deleted_files)} deleted, {len(failed_files)} failed")
         
         return {
             'deleted_files': deleted_files,
@@ -530,24 +603,24 @@ class FileConverter:
         renamed_files = []
         failed_renames = []
         
-        print(f"📝 Renaming {len(new_fcb_paths)} _new.fcb files to original names, Please wait.")
+        print(f"ðŸ“ Renaming {len(new_fcb_paths)} _new.fcb files to original names, Please wait.")
         
         for new_fcb_path, original_fcb_path in zip(new_fcb_paths, original_fcb_paths):
             try:
                 if not os.path.exists(new_fcb_path):
-                    print(f"   ❌ New FCB file missing: {os.path.basename(new_fcb_path)}")
+                    print(f"   âŒ New FCB file missing: {os.path.basename(new_fcb_path)}")
                     failed_renames.append((new_fcb_path, original_fcb_path))
                     continue
                 
                 # Check if target already exists (shouldn't happen if deletion worked)
                 if os.path.exists(original_fcb_path):
-                    print(f"   ⚠ Target file still exists: {os.path.basename(original_fcb_path)}")
+                    print(f"   âš  Target file still exists: {os.path.basename(original_fcb_path)}")
                     # Try to delete it one more time
                     try:
                         os.remove(original_fcb_path)
-                        print(f"   🗑 Removed remaining target file")
+                        print(f"   ðŸ—‘ Removed remaining target file")
                     except Exception as e:
-                        print(f"   ❌ Could not remove target file: {e}")
+                        print(f"   âŒ Could not remove target file: {e}")
                         failed_renames.append((new_fcb_path, original_fcb_path))
                         continue
                 
@@ -555,23 +628,23 @@ class FileConverter:
                 new_file_size = os.path.getsize(new_fcb_path)
                 
                 # Perform the rename
-                print(f"   📝 Renaming: {os.path.basename(new_fcb_path)} → {os.path.basename(original_fcb_path)}")
+                print(f"   ðŸ“ Renaming: {os.path.basename(new_fcb_path)} â†’ {os.path.basename(original_fcb_path)}")
                 os.rename(new_fcb_path, original_fcb_path)
                 
                 # Verify the rename worked
                 if os.path.exists(original_fcb_path) and not os.path.exists(new_fcb_path):
                     final_size = os.path.getsize(original_fcb_path)
-                    print(f"   ✅ Rename successful: {os.path.basename(original_fcb_path)} ({final_size} bytes)")
+                    print(f"   âœ… Rename successful: {os.path.basename(original_fcb_path)} ({final_size} bytes)")
                     renamed_files.append(original_fcb_path)
                 else:
-                    print(f"   ❌ Rename verification failed")
+                    print(f"   âŒ Rename verification failed")
                     failed_renames.append((new_fcb_path, original_fcb_path))
                     
             except Exception as e:
-                print(f"   ❌ Error renaming {os.path.basename(new_fcb_path)}: {e}")
+                print(f"   âŒ Error renaming {os.path.basename(new_fcb_path)}: {e}")
                 failed_renames.append((new_fcb_path, original_fcb_path))
         
-        print(f"📊 Rename summary: {len(renamed_files)} successful, {len(failed_renames)} failed")
+        print(f"ðŸ“Š Rename summary: {len(renamed_files)} successful, {len(failed_renames)} failed")
         
         return {
             'renamed_files': renamed_files,
@@ -581,23 +654,23 @@ class FileConverter:
     def cleanup_backup_files(self, backup_files, keep_backups=False):
         """Clean up backup files after successful conversion"""
         if keep_backups:
-            print(f"💾 Keeping {len(backup_files)} backup files for safety")
+            print(f"ðŸ’¾ Keeping {len(backup_files)} backup files for safety")
             return
         
-        print(f"🧹 Cleaning up {len(backup_files)} backup files, Please wait.")
+        print(f"ðŸ§¹ Cleaning up {len(backup_files)} backup files, Please wait.")
         
         for backup_file in backup_files:
             try:
                 if os.path.exists(backup_file):
                     os.remove(backup_file)
-                    print(f"   🗑 Removed backup: {os.path.basename(backup_file)}")
+                    print(f"   ðŸ—‘ Removed backup: {os.path.basename(backup_file)}")
             except Exception as e:
-                print(f"   ⚠ Could not remove backup {os.path.basename(backup_file)}: {e}")
+                print(f"   âš  Could not remove backup {os.path.basename(backup_file)}: {e}")
 
     def convert_all_worldsector_files_improved(self, worldsectors_path):
         """Improved method to convert all worldsector files with separated steps - NO BACKUPS"""
         try:
-            print(f"\n🔄 Starting improved WorldSector conversion process, Please wait.")
+            print(f"\nðŸ”„ Starting improved WorldSector conversion process, Please wait.")
             
             # Step 1: Find all .converted.xml files
             import glob
@@ -605,13 +678,13 @@ class FileConverter:
             xml_files = glob.glob(xml_pattern)
             
             if not xml_files:
-                print(f"❌ No .converted.xml files found in {worldsectors_path}")
+                print(f"âŒ No .converted.xml files found in {worldsectors_path}")
                 return False
             
-            print(f"📋 Found {len(xml_files)} .converted.xml files to process")
+            print(f"ðŸ“‹ Found {len(xml_files)} .converted.xml files to process")
             
             # Step 2: Delete original FCB files FIRST (no backups)
-            print(f"\n🗑 Phase 1: Deleting original FCB files, Please wait.")
+            print(f"\nðŸ—‘ Phase 1: Deleting original FCB files, Please wait.")
             original_fcb_files = []
             for xml_file in xml_files:
                 original_fcb = xml_file.replace('.converted.xml', '')
@@ -628,47 +701,47 @@ class FileConverter:
                         
                         if not os.path.exists(fcb_file):
                             deleted_files.append(fcb_file)
-                            print(f"   ✓ Deleted: {os.path.basename(fcb_file)} ({file_size} bytes)")
+                            print(f"   âœ“ Deleted: {os.path.basename(fcb_file)} ({file_size} bytes)")
                         else:
                             failed_deletions.append(fcb_file)
-                            print(f"   ❌ Failed to delete: {os.path.basename(fcb_file)}")
+                            print(f"   âŒ Failed to delete: {os.path.basename(fcb_file)}")
                     else:
-                        print(f"   ⚠ File doesn't exist: {os.path.basename(fcb_file)}")
+                        print(f"   âš  File doesn't exist: {os.path.basename(fcb_file)}")
                         
                 except Exception as e:
                     failed_deletions.append(fcb_file)
-                    print(f"   ❌ Error deleting {os.path.basename(fcb_file)}: {e}")
+                    print(f"   âŒ Error deleting {os.path.basename(fcb_file)}: {e}")
 
             if failed_deletions:
-                print(f"⚠ Warning: {len(failed_deletions)} files could not be deleted:")
+                print(f"âš  Warning: {len(failed_deletions)} files could not be deleted:")
                 for failed_file in failed_deletions:
                     print(f"   - {os.path.basename(failed_file)}")
-                print(f"💡 Make sure the game is closed and try again")
+                print(f"ðŸ’¡ Make sure the game is closed and try again")
 
             # Step 3: Convert XML files to _new.fcb files (now that originals are gone)
-            print(f"\n📁 Phase 2: Converting XML files to FCB, Please wait.")
+            print(f"\nðŸ“ Phase 2: Converting XML files to FCB, Please wait.")
             new_fcb_files = []
 
             for xml_file in xml_files:
                 original_fcb = xml_file.replace('.converted.xml', '')
                 
-                print(f"\n🔧 Converting: {os.path.basename(xml_file)}")
+                print(f"\nðŸ”§ Converting: {os.path.basename(xml_file)}")
                 new_fcb_path = self.convert_converted_xml_back_to_fcb(original_fcb)
                 
                 if new_fcb_path:
                     new_fcb_files.append(new_fcb_path)
-                    print(f"   ✅ Success: {os.path.basename(new_fcb_path)}")
+                    print(f"   âœ… Success: {os.path.basename(new_fcb_path)}")
                 else:
-                    print(f"   ❌ Failed: {os.path.basename(xml_file)}")
+                    print(f"   âŒ Failed: {os.path.basename(xml_file)}")
             
             if not new_fcb_files:
-                print(f"❌ No FCB files were successfully converted")
+                print(f"âŒ No FCB files were successfully converted")
                 return False
             
-            print(f"\n📊 Conversion Results: {len(new_fcb_files)}/{len(xml_files)} successful")
+            print(f"\nðŸ“Š Conversion Results: {len(new_fcb_files)}/{len(xml_files)} successful")
             
             # Step 4: Rename _new.fcb files to original names
-            print(f"\n📝 Phase 3: Renaming _new.fcb files, Please wait.")
+            print(f"\nðŸ“ Phase 3: Renaming _new.fcb files, Please wait.")
             
             renamed_files = []
             failed_renames = []
@@ -682,64 +755,64 @@ class FileConverter:
                         if os.path.exists(original_file) and not os.path.exists(new_file):
                             renamed_files.append(original_file)
                             final_size = os.path.getsize(original_file)
-                            print(f"   ✅ Renamed: {os.path.basename(new_file)} → {os.path.basename(original_file)} ({final_size} bytes)")
+                            print(f"   âœ… Renamed: {os.path.basename(new_file)} â†’ {os.path.basename(original_file)} ({final_size} bytes)")
                         else:
                             failed_renames.append((new_file, original_file))
-                            print(f"   ❌ Rename failed: {os.path.basename(new_file)}")
+                            print(f"   âŒ Rename failed: {os.path.basename(new_file)}")
                     else:
                         failed_renames.append((new_file, original_file))
-                        print(f"   ❌ New file missing: {os.path.basename(new_file)}")
+                        print(f"   âŒ New file missing: {os.path.basename(new_file)}")
                         
                 except Exception as e:
                     failed_renames.append((new_file, original_file))
-                    print(f"   ❌ Error renaming {os.path.basename(new_file)}: {e}")
+                    print(f"   âŒ Error renaming {os.path.basename(new_file)}: {e}")
             
             # Step 5: Clean up XML files
-            print(f"\n🧹 Phase 4: Cleanup, Please wait.")
+            print(f"\nðŸ§¹ Phase 4: Cleanup, Please wait.")
             
             if len(renamed_files) == len(xml_files) and not failed_renames:
                 # Complete success - clean up XML files
-                print(f"🗑 Removing .converted.xml files, Please wait.")
+                print(f"ðŸ—‘ Removing .converted.xml files, Please wait.")
                 for xml_file in xml_files:
                     try:
                         os.remove(xml_file)
-                        print(f"   ✓ Removed: {os.path.basename(xml_file)}")
+                        print(f"   âœ“ Removed: {os.path.basename(xml_file)}")
                     except Exception as e:
-                        print(f"   ⚠ Could not remove {os.path.basename(xml_file)}: {e}")
+                        print(f"   âš  Could not remove {os.path.basename(xml_file)}: {e}")
             else:
                 # Partial success - keep XML files for troubleshooting
-                print(f"⚠ Partial success - keeping XML files for troubleshooting")
+                print(f"âš  Partial success - keeping XML files for troubleshooting")
             
             # Step 6: Final summary
-            print(f"\n📊 FINAL RESULTS:")
-            print(f"   ✅ Successfully converted: {len(renamed_files)}/{len(xml_files)} files")
-            print(f"   ❌ Failed conversions: {len(xml_files) - len(new_fcb_files)}")
-            print(f"   ❌ Failed deletions: {len(failed_deletions)}")
-            print(f"   ❌ Failed renames: {len(failed_renames)}")
+            print(f"\nðŸ“Š FINAL RESULTS:")
+            print(f"   âœ… Successfully converted: {len(renamed_files)}/{len(xml_files)} files")
+            print(f"   âŒ Failed conversions: {len(xml_files) - len(new_fcb_files)}")
+            print(f"   âŒ Failed deletions: {len(failed_deletions)}")
+            print(f"   âŒ Failed renames: {len(failed_renames)}")
             
             if len(renamed_files) == len(xml_files):
-                print(f"🎉 ALL FILES SUCCESSFULLY CONVERTED!")
-                print(f"💡 Your changes should now appear in the game")
+                print(f"ðŸŽ‰ ALL FILES SUCCESSFULLY CONVERTED!")
+                print(f"ðŸ’¡ Your changes should now appear in the game")
                 return True
             else:
-                print(f"⚠ PARTIAL SUCCESS - some files may need manual intervention")
+                print(f"âš  PARTIAL SUCCESS - some files may need manual intervention")
                 return len(renamed_files) > 0
                 
         except Exception as e:
-            print(f"❌ Conversion process failed: {e}")
+            print(f"âŒ Conversion process failed: {e}")
             import traceback
             traceback.print_exc()
             return False
         
     def restore_from_backups(self, backup_files):
         """Restore original files from backups if something goes wrong"""
-        print(f"🔄 Restoring {len(backup_files)} files from backups, Please wait.")
+        print(f"ðŸ”„ Restoring {len(backup_files)} files from backups, Please wait.")
         
         restored_count = 0
         for backup_file in backup_files:
             try:
                 if not os.path.exists(backup_file):
-                    print(f"   ⚠ Backup missing: {os.path.basename(backup_file)}")
+                    print(f"   âš  Backup missing: {os.path.basename(backup_file)}")
                     continue
                 
                 # Get original file path
@@ -750,33 +823,33 @@ class FileConverter:
                 
                 # Restore the file
                 shutil.copy2(backup_file, original_file)
-                print(f"   ✅ Restored: {os.path.basename(original_file)}")
+                print(f"   âœ… Restored: {os.path.basename(original_file)}")
                 restored_count += 1
                 
             except Exception as e:
-                print(f"   ❌ Error restoring {os.path.basename(backup_file)}: {e}")
+                print(f"   âŒ Error restoring {os.path.basename(backup_file)}: {e}")
         
-        print(f"📊 Restored {restored_count}/{len(backup_files)} files")
+        print(f"ðŸ“Š Restored {restored_count}/{len(backup_files)} files")
         return restored_count
 
     def get_data_file_info(self, worldsectors_path):
         """Get information about .data files in worldsectors folder"""
         try:
-            # Find .data.fcb files
+            # Find all .data.fcb files
             fcb_pattern = os.path.join(worldsectors_path, "*.data.fcb")
             fcb_files = glob.glob(fcb_pattern)
-            
-            # Find .converted.xml files
+
+            # Find converted .xml files for data.fcb
             converted_pattern = os.path.join(worldsectors_path, "*.data.fcb.converted.xml")
             converted_files = glob.glob(converted_pattern)
-            
-            # Count files that need conversion
+
+            # Count files that still need conversion
             needs_conversion = 0
             for fcb_file in fcb_files:
-                converted_file = fcb_file + '.converted.xml'
-                if not os.path.exists(converted_file):
+                expected_xml = fcb_file + ".converted.xml"
+                if not os.path.exists(expected_xml):
                     needs_conversion += 1
-            
+
             return {
                 'total_fcb_files': len(fcb_files),
                 'total_xml_files': len(converted_files),
@@ -784,6 +857,7 @@ class FileConverter:
                 'fcb_files': fcb_files,
                 'xml_files': converted_files
             }
+
         except Exception as e:
             print(f"Error getting data file info: {str(e)}")
             return {
@@ -793,9 +867,7 @@ class FileConverter:
                 'fcb_files': [],
                 'xml_files': []
             }
-
-    # KEEP ONLY THESE METHODS FOR MAIN LEVEL FILES (using old Gibbed tools)
-    
+        
     def convert_folder(self, folder_path, progress_callback=None):
         """Convert main level FCB files to XML format"""
         if not self.has_gibbed_tools():
@@ -803,7 +875,7 @@ class FileConverter:
             if progress_callback:
                 progress_callback(1.0)
             return 0, 0, []
-        
+
         # Define main files to convert
         target_fcb_files = [
             '.managers.fcb',
@@ -811,9 +883,9 @@ class FileConverter:
             '.omnis.fcb',
             'sectorsdep.fcb'
         ]
-        
+
         print("Looking for main FCB files to convert, Please wait.")
-        
+
         # Find target files
         files_to_convert = []
         for root, _, files in os.walk(folder_path):
@@ -821,9 +893,9 @@ class FileConverter:
                 # Skip game files
                 if filename.endswith(".game.xml"):
                     continue
-                    
+
                 file_path = os.path.join(root, filename)
-                
+
                 # Check if matches target pattern
                 for target_pattern in target_fcb_files:
                     if filename.endswith(target_pattern) or target_pattern in filename:
@@ -831,36 +903,37 @@ class FileConverter:
                         if not os.path.exists(xml_path):
                             files_to_convert.append(file_path)
                         break
-        
+
         if not files_to_convert:
-            print("No main FCB files found that need conversion")
+            print("No FCB files found that need conversion")
             if progress_callback:
                 progress_callback(1.0)
             return 0, 0, []
-        
+
         # Convert files using Gibbed tools
         success_count = 0
         error_count = 0
         errors = []
-        
+
         for i, file_path in enumerate(files_to_convert):
             try:
+                # Use Gibbed tool for all FCBs
                 if self.convert_main_fcb_to_xml(file_path):
                     success_count += 1
                 else:
                     error_count += 1
                     errors.append(f"Failed to convert: {file_path}")
-                
+
                 if progress_callback:
                     progress_callback((i + 1) / len(files_to_convert))
-                    
+
             except Exception as e:
                 error_count += 1
                 errors.append(f"Error processing {file_path}: {str(e)}")
-        
+
         if progress_callback:
             progress_callback(1.0)
-        
+
         return success_count, error_count, errors
 
     def has_gibbed_tools(self):
@@ -935,6 +1008,10 @@ def _convert_fcb_worker(task):
             result['message'] = f"Already converted: {result['filename']}"
             return result
         
+        # Get directory for checking new files
+        fcb_dir = os.path.dirname(fcb_path)
+        before_files = set(os.listdir(fcb_dir))
+        
         # Create startup info to hide console window
         startupinfo = None
         if sys.platform == 'win32':
@@ -949,14 +1026,24 @@ def _convert_fcb_worker(task):
             stderr=subprocess.PIPE,
             text=True,
             timeout=30,
-            startupinfo=startupinfo,  # Add this
-            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0  # Add this
+            startupinfo=startupinfo,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
         )
         
-        if process.returncode == 0 and os.path.exists(converted_xml_path):
-            xml_size = os.path.getsize(converted_xml_path)
-            result['success'] = True
-            result['message'] = f"Converted: {result['filename']} ({xml_size} bytes)"
+        if process.returncode == 0:
+            # Check what happened
+            after_files = set(os.listdir(fcb_dir))
+            new_files = after_files - before_files
+            deleted_files = before_files - after_files
+            
+            if os.path.exists(converted_xml_path):
+                xml_size = os.path.getsize(converted_xml_path)
+                result['success'] = True
+                result['message'] = f"Converted: {result['filename']} ({xml_size} bytes)"
+            else:
+                # File was converted but output missing
+                result['error'] = f"Output missing. New: {new_files}, Deleted: {deleted_files}"
+                result['message'] = f"Failed: {result['filename']}"
         else:
             result['error'] = f"Return code: {process.returncode}"
             if process.stderr:

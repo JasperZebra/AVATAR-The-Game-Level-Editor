@@ -1,0 +1,246 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Corp_HG_RDA_Logo"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MTREMBLAY-M-2804200960823769.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MTREMBLAY-M-1302200946116483.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 1,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    }
+  ],
+  "images": [
+    {
+      "name": "corp_hg_metal_chrome_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAM0lEQVR4nO3QQQ0AAAgDsYF/zxBU8OkM3NJKMnlcf8YdIECAAAECBAgQIECAAAECBI5gASESAT/ktoT9AAAAAElFTkSuQmCC"
+    },
+    {
+      "name": "corp_hg_neons&buttons_01_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEx0lEQVR4nHVXW27kNhAs8WV5ZrCYBRYL7FFzihwlXzlALpGP5AAB8rPGemcsiyIVFMmWWvSkDYIUJbKq357hz79/X5ESyggBfjBIKSLnCGM8KLLm7P0JWn756wvuU8Rp9AjOYpoTxmDLO70WmZdUvrtNc3l2mGciAN6jrJ/GAiTAIkKC5PQ7gsscXYI1Fi+3GaO3B/BpXrb5jojrZWwEbPuIFrAWMd7RC4Gt9eWdWIWW4LN3BucxlD1q9XKvhEhAyxhcu2s4WMIdvrIWJu+P2g1CpH5WyZCEgFO4tiZVTWOdxQovP6dCQogICeetBziaJKQCIAQ+knjCuparEWOmDZGWChanCONqLKScMM0R5DctCeNoeGNBoDy7SsxtwEtEXiJMeKzxTsjCOVdG0WKakZfdbCUmRsA7W8bmAgbokioZZ/G9BaERcOs8/HjawAQ4hHMJPB0by7Jss4D70cM4U2KCFjj4v3t+mSI+j6HsuwLkmqYuYJ5vBz/3KWnM7kNagcBi/vEyIlRuhQR9LKZ+K9pnfLuMZV2fE0zKQFwyOKdE/zM9mG4EOyEbC+NPsG4ssTKYAXnI26BLLSyMMUjvPM86Ume69PZefZ4TME3NsgNjxMKbAGMZ+aZ4ohysh20ZRePB1ANrvUgu2N1kMc8zQtizocTGzKJVrUMS/77W9PxZXY9LAJggTgCFgF5rMA1aNFpzIadJ5JwRYwUOLZjjHHF+svjazq1CMNVheEjAei2EjBaxBMFJgsBiMQJzkMTttgetuEGLFElnkJDnCWAgrh6Rpbb1BQK4dU+5zU2KRCg3JcRtjzHjcX+NMD4i0DqtTpTsyKnsvc0Jr/cIIxmwSWz1XxqUEqYdXaHdIlHep9r1y4jw9LERPUujignXk69pyPzfhAFJV7TeIMAyG9/8rgKTJP5hqXVmB3tPiBw5l9rAohSXhO+3eubzubrbaYasA7GUy9oXKolj3mf+rXmzAisatSc48/zk7UFzv9rN/KyS1ptDoxp+a4EpjXdvwKwGpapWj7Q5q3f89tc/jp7iUoopw4lQNCg7fTH9BJzPyuBg/W6XcfAsHXJ6QOhjTlTRyZMWYHpt4Oxz7ZDMrTQcCfgGeG3rHliDe6W9eFwsICCs1iTS/nc5vLtcqjXEIk4upXAvtNl3wMW0bXC9NdcuxRky2gVCUL4TYLGay0ojIaElqXdSWjorViYGSO/sK/UQAXQdk5gmAWb6RsAojUTD2g+PYBrUPwCXmT7WAD0JDrEC5658HM0vmvNZF2kJ1oOZBlXom0g5KZ90s7w3ApLa0EAapHfNJmK6omK9VCJdNNUW+HDcdH6WM8e2tEvs1tulexE8+J8kVFGtVln32d1VakkG9ETm/zG9rMXf6vfNQeOD+Q3w/AS8vdc9p7Xpo1yKk+w9ig3RshchQxI6Fl5+APhUSWyGk8t7EJ2eQZGUd0FFtraEJtRnwfXTkag7Paj/MveactZxRJxEHy9AGOtaMoF7WiT95HfJ/NYI4EFh0X6/trVUSamIkjUbmfYP59Q2209GXIfHNUEIGg2qNesDTpMi1laaXdWeg2v5pdb+W/9ghW3Nku0Ap32spe8PlJJ2XZ84tF6SGYDnduBt3mNEyvBG+rn2iv8AMpGB1RBjis0AAAAASUVORK5CYII="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 780,
+      "type": "VEC3",
+      "min": [
+        -0.81801812723279,
+        -0.10718100517988205,
+        -0.3155919061973691
+      ],
+      "max": [
+        0.8183843493461609,
+        0.003875850699841976,
+        0.3155613876879215
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 780,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 780,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 780,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 969,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 639,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 9360,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9424,
+      "byteLength": 6240,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15664,
+      "byteLength": 6240,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 21904,
+      "byteLength": 12480,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 34384,
+      "byteLength": 1938,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36322,
+      "byteLength": 1278,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 37600,
+      "uri": "corp_hg_rda_logo.bin"
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "FX_Gather_Corp_Mesh01_01"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\NSALAS-M-2009011459973870.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "bars",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAACACAYAAADktbcKAAAD5UlEQVR4nO3dv2sbZxwHYCmWQYGS3UOXQId6jMmSsYEONnRotng02HsJmECakLRQDKG7DR6dzR0K9lBwxyyBjO5QyNLBf0KMrNSlmU+Wk+N+fp5nEbyvde/rk/XR9707n4aDweByAES60fQEgOYIAAg2us4PXV4WrxKGw+G1+oF2UgFAMAEAwQQApB8DePfPu8LO21/erns+QN0BcHN0s84xgZawBIBgAgCCCQAIdq0Lgco6/eu0sH356+U6hgdmUAFAMAEAwQQABBv1aBTgE6kAIJgAgGCKczrv7OyssH1paan2uXSNCgCCCQAIJgAgmACAYAIAggkACCYAIJgAgGACAIIJAAjWikuBT/44KWy//+392ucCfXP694w7cn21rAKAZK2oAFoyC4gT8dZ7++ZtYfudu3c+Pr5+87qw/97de5XOC5rmICAEEwAQrBdLgKPjo8L2tdW1az1/PBhf2X/y54yzFN84S0G3qQAgmACAYAIAgvXiGEBPfguoXSfeOoe/Hxa2P/juQe1zgT6xBIBgAgCCdWIJMO88PfB5VAAQrBMVQNsdvDoobF9/uF77XOBTqAAgmACAYJYAlObbebtLBQDBBAAEEwAQzDEAGr8nI81RAUAwAQDBLAGYq+u3Te/6/Ocpc89KFQAEEwAQTABAMMcA6P39GLo+/yqpACCYCqAGe3t7he2bm5t1DA8zqQAgmACAYJYAtJ7/JaiOCgCCCQAIJgAgmGMADA5/m/Hdi9/77sW+UwFAMAEAwSwBGIxHrpVPpQKAYAIAggkACCYAIJgAgGDOAtA4FyI1RwUAwVQANM51CM1RAUAwAQDBBAAEcwwAWu7g1UFh+/rD9dLbVgFAMAEAwQQABBMAEEwAQDABAMGcBmyB7e3twvadnZ1ObJ/uEgAtMB6PO719ussSAIIJAAhmCUC8l7++LNwHj354VMu+2draKmzf3d2tfGwBQLxbX9xqdB+srKw0NrYlAAQTABBMAEAwAQDBBAAEcxYAKrbzS/El19uPiy/RrpMKAIKpAKBii4uLg7YSADDH0ydPC9tf/Pzi4+OzH58V9j//6fmg7SwBIJgAgGCWADDHcGHY249RAdADGxsbhe37+/u1z4Vu6XB2AWUJAAhmCdADo5GXkc+jAoBgPjo6YHVttbD9+Oi49rnQLyoACKYC6ICFGwtNT4GeUgFAMAEAwQQABBMAEEwAQDABAMEEAAzSrwOYVjzKtFz/+fS80ueX3f68/slkcvXTp1dv4MO/H0o9f15/2f3z/vx9pduv+vWflHx95vVfXFyUGn8ynVT296kCgGD/3+rksulJAM1QAUCw/wCsMatjhPZ2DwAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 57,
+      "type": "VEC3",
+      "min": [
+        -0.433759574778378,
+        -0.43540757428854704,
+        0.0
+      ],
+      "max": [
+        0.417401653714478,
+        0.4028443247079849,
+        0.8353526405990124
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 57,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 57,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 57,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 216,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 684,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 748,
+      "byteLength": 456,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1204,
+      "byteLength": 456,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1660,
+      "byteLength": 912,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2572,
+      "byteLength": 432,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 3004,
+      "uri": "fx_gather_corp_mesh01_01.bin"
+    }
+  ]
+}
