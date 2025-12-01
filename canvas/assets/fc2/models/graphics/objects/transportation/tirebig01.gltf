@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "TireBig01"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\JARRIOLA-M-3004200754311608.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "tire01_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAKs0lEQVR4nMVbWZLrOA6UKdrRV5mP6fsfrcMuyROgmFQiCciu1x+DigpbEkVi30jf/v7vf95LANt2fK5F7u/9QYd1Xf31+xyzvbdluT36uGiVZXm9l6XInLKiXB8T7WVt70X4GU5bJ2Dt4weUy8vfg63j/jsxa+mI7ue4DIwY+2/vrUbARt9x3xOSMU3HfYKSPcjmAXJXAOLbArSCMsGujRD8H/fOd/H9t0S5NUwL/4QB22c6HfwWx2FiAYIn4VtTZfwrI6A1/l0/dr31z7I6wQDqdKd7BNiW2rxZFeyvjxgENe3Y1uW5PU8k93+We7kPJGz+Zqf9etsPKzVJGbLHPbNts2PDZzsJsTUIk+5dJrOzubafjtet+wT7I6mCQXX5A1D7OyRlCBuBx7PHeqAHZjSk4Jg6oYz0Al8BU9g3p774zhLl8dE7DEw8Xxcd+K0mq/rBeQHBhoxJ8rY2pPb33v4d0YQ44LW/JmLdWGbKZfSgdwLJ43udBv+BFpjk1TlmRDSG7PFYY1C5FfcOGMjX4zsxcpiBjv/gnKreGBOBIMoSeHHYLKS7vMslC5UwBhBuvgLIY35edzCV1R94rl0QNO/wG92vHDdNU+FoN28CbCbDpvl5IAmo9bfA3rgh9t5C5kTMYvO6XMN8DAtLnOS4vwUmcAXDhmlySE2llL0LZ8dSYbVVLWMwx4p3zLna9bNHHwjLfIjhhPntGgxufkm8XGWpH6rhEWeviwnVVjPVnojvCDJxkSY50+pg68HL436LMLdEU/dzLaelgms1O7BkZGsTteX9ZPbcONyDcHkX59FZKsfbMzMMeRCmTipjlppWdv9qDoW2Nr5331EbkZG9kTZ4Dh82m8VeZQAk1iRIpsKI2j12gBj/iaAI+D0lPoI6FukOolDxckSQ076iSVWaiLn7vi/3+31Cnol0c9n6+/GczYuvdS2WqIKaz1gb83aayqcKKyIek7Mdwyws7hrxpVdBtjgIuPIVMCOeWzNBPEPIdDiRh1fir3xVnYh/n3n89jMjyg4wdFRmIndaVEwC1/vPwaSWqLyPhEXTVSANZ+ZMT1NjcZADR3O8VLs8ujPH+xXOQCXNEzEw5yF5RZhBQyQYAA3RKq6sXv2BaGbbETj/4Qo3nzEapLNCdZlAVX2MwyfbKSM/2e66Lo/HY0gd/wB+N/L+WRJm95VRV92mzfxLJH2bCNUcA3vqkDDL8gLk7HvmLKNcXc0K/7oua2PkINunrtuZi3ymTqsHRIM4U58W9w15s1urxZfT7pp6Wb1vqrx0+76JWbyX5fl8tmdq9xivRMC2gUukWSfTsJYRirbc4UMiqNFNZFJRPu1UdduWvcfNEeftL5DqKGCoW5N1eo4U93TGPP9M8LV/UDPBWDjzuvwC2IkBTCqcHo+xQphrXCT1OY9N434Qeb7JMMc4qUFKluSMRYM+WkSgPrNcoEk4cYT2HGPdu8F4LbTgE1rRw92lIM7zuDAKrLAamxx9OS1NAyYMNf6xjm5p/6wdCHP7a29j2jPqLYwcIGACIwjJMl6KI5vL2nxO+xb2JtSJl4h7qNkz6UdIMzFT97ZrQzRW51NVjtRas8RsXPaM3686CM3LzKag3tl9kywTxglPZjbOV0jB1J4HLbKo/6DvZk0Vfqeixldgp6YvMVHT1liQ0uIeP1Mm6jya/nLqG/YZL3zHFVReJLP9bD+Qw5iquEqbt7hanlCKK5owX/tsvbrj+X7bF/tr+UE5BJMlZC067JQGW/+C8pSUAbvU6wg1Yem6fyf5MLyJZli5zIyM3m3E6wZoUlL3l/1l15hIyw1qNpnWAbi33mepMkR2Hjk91hId7xglxKPfl22E7GPPbc5Xjn6Ax6viYdZrZ1tsJvL+THAU1hjUHPA98hUnZQczdIeJP9uwFv3Od7kpGuFQbf/+7JMd9sdEsCawIxqtLhJRVtNH6j2Ydjvmfb1fy+vntdxvJAxmbP8Kc+W+JO4ddcqzj+1rdv82TODdBd4fV6yB/f3WJA0KFSzE0DibqDsTz85OawEUS2CqVomaYmvqyzghIYra7FmkqA5bQrotbohLKZqNtfqer5Uh+Hy98sqsIduasaSFsjR3o5F56t4ij+X8HyU+b5QURaKFnv7PC2adnyyddUTQOHj+Ma7X5lf7earqugE70dDNQwWn47d9W+r280xDipaO2g8EAcM5/ZCXJX/yKURysqPVJuNwfD6W5WbrPI9dHokC7LOgAf7Mksy/dPir/jWigX1q15WRYWhxWqCp54csbCRRkrqqRn1b92PsVec4goqdHXDJGME1OU+uaWlbKGgrsjOCQLPMcMroRhg/naBTfZN+0q7/tBMd7SOU9oAqv8iuPnV+I03I4u4UIaR3aE5S/cefHNS6gnGYYzUfQJmR2dSuFeD79fUenTGB47im1pNk7Ovbt+D32vP+2/mc5zv3K/rcrt/4WMrtPJITwg27Xr0hskXj+OBfQrzZl5nL5Gkl1mqsztrY6rz4eWbLSmQpcWcYc455yc9U0OvfZK7G0UEbKVyfaymLPJwJ49qdmcDEaekbbZqW5ji9X4hC4Kh4xclWlOWyUXNypZzS0Rg8/AeHLqtIhVAFZga0iZuVWZMjIkqJvzpgEUE1m+FsaYfN01osCdeYsHfYh8g5vswMmJmuqYkzgkiLIwI4bDbidQPHRy8+EeL9cGfqw2I2nf5gUPtTyZx7Bd6M5uQlJh5E8tnAgV4gyWnf8UNH+xsoiNtqt9NxNSqT1TaZs7pDy2DMjLarmQmXBH+h0vl+ZDy+cktZ9/HZ/nSnZizSzgjSQvK+6y32QxDju8H+OwJPgkYRP59oYSY0J5nPUyNpyEp9VsyCDP+0R3fQijWln+N15/R4683GDq/s7XuQZ6eYXJjC+Jmw8/yfh/O0S8SA4jtAzIx58niSaMw4bN2J5fkjBP9fUL4hfpIypaIZZ7fdzMbfi84IZ9Kxe7OEr9XZjz1/eDHhxg57C3L/4YTGjq6fmM/zA1kd1+7T1jjMwNX9lkN8pVlxzyEe+82Y83u1K0egxFH7DZDbY6PzuEdOzvtygf3BIfXSV7fcI8fXxgxTEgb2/gXGtA6CSz6OHgHON62oHm1/0t4Z84EBi7ddzgWu8nirA7SaA2LZPn4U1rjZEkEm9bGGOmI5a/gpshROYiwt/nRA0Z6jZ4BihRMmnBXg8Yj/0W6O1gF6qjSDq92e6BlnnAy1Ed1pbp/S97+qAwzcWSKqA3hhlrRqx2hnB4cionKa8Wrzq6NMNlazne56pxIy2j6KEhvenRnIdqaoOl+ZkW7IaBcqxIESHzemm3G0u8z4ba14O6HwD42uEBwvdCm63/ZIFIlqe74Xbm0nkSiDq4Awagw5snc0XYWejY7AMwFKfJSfI8v7piUNf/FNHZDt//9biDSj8gJR5ZeppLumVPfq1Pd0CoV+8hatGZbFYz8iINDM4Gc+5epyEWXAGnhbrfm5EJrk0fsBbJvDyjY7m9u/UrNDGeEKLdmr/PpXXNlpEsoTeCpkoCU6CzSVu1envCmMRlldlP+r7X9zkuNbwNzocwBHBeBariaLegC+DtiSH1gEabHMddUAieoAXU8Ba46N0w8/rBodvy3ZX4uOxzgiqA74Jp+P0t5I8yY8LgqaqHntPP/4CeD8Pu79D+U6YHgbJ+7hAAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 309,
+      "type": "VEC3",
+      "min": [
+        -0.5897396765649319,
+        -0.5897396765649319,
+        -0.20361949503421783
+      ],
+      "max": [
+        0.5897091580554843,
+        0.5896786395460367,
+        0.20358897652477026
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 309,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 309,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 309,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 1080,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 3708,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3772,
+      "byteLength": 2472,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6244,
+      "byteLength": 2472,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8716,
+      "byteLength": 4944,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 13660,
+      "byteLength": 2160,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 15820,
+      "uri": "tirebig01.bin"
+    }
+  ]
+}

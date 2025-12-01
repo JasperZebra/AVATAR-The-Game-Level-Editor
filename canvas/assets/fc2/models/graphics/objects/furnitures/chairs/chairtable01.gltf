@@ -1,0 +1,265 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        6
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "ChairTable01",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "State_1st",
+      "translation": [
+        -0.1430383324623108,
+        0.005680580157786608,
+        0.0
+      ],
+      "children": [
+        2,
+        4
+      ]
+    },
+    {
+      "name": "State01_Prim",
+      "translation": [
+        0.11060546338558197,
+        -0.20615699887275696,
+        0.0
+      ],
+      "children": [
+        3
+      ]
+    },
+    {
+      "name": "DeathState01",
+      "translation": [
+        0.0030993700493127108,
+        0.15356022119522095,
+        0.4589841067790985
+      ]
+    },
+    {
+      "name": "State01_Prim01",
+      "translation": [
+        0.11060546338558197,
+        -0.20615699887275696,
+        0.0
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        5
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\HLEVASSEUR-M-2008060237873099.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "dualcolor02_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAHklEQVR4nGM0zDv8nwEPYMInSR0FLE5aHDS2gqACALJGAudDiIkwAAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 5,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1712,
+      "type": "VEC3",
+      "min": [
+        -0.28955961763858795,
+        -0.10480056144297123,
+        0.018433179706335068
+      ],
+      "max": [
+        0.2971892450004816,
+        0.4081545453518629,
+        1.107150485739112
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 1712,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 1712,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 1712,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 2478,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 2478,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 320
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 320,
+      "byteLength": 20544,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 20864,
+      "byteLength": 13696,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 34560,
+      "byteLength": 13696,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 48256,
+      "byteLength": 27392,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 75648,
+      "byteLength": 4956,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 80604,
+      "byteLength": 4956,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 85560,
+      "uri": "chairtable01.bin"
+    }
+  ]
+}

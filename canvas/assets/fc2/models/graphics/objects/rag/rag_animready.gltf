@@ -1,0 +1,201 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        3
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Rag_AnimReady",
+      "rotation": [
+        0.6800773710342581,
+        0.17748536193805636,
+        0.3564566020436169,
+        0.6155748522939458
+      ],
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "Rag_AnimReady_LOD0",
+      "rotation": [
+        1.175708835843281e-15,
+        -5.508831238398848e-16,
+        1.5543122344752178e-15,
+        1.0
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        2
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "Rag_AnimReady_3581307827_0.fakemat",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [],
+  "images": [],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 2,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 254,
+      "type": "VEC3",
+      "min": [
+        -0.06445509195327759,
+        -0.048310800455510616,
+        -0.0968962674960494
+      ],
+      "max": [
+        0.07016205321997404,
+        0.012421033345162868,
+        0.06518753618001938
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 254,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 254,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 254,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 918,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 128
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 128,
+      "byteLength": 3048,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3176,
+      "byteLength": 2032,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5208,
+      "byteLength": 2032,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7240,
+      "byteLength": 4064,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11304,
+      "byteLength": 1836,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 13140,
+      "uri": "rag_animready.bin"
+    }
+  ]
+}

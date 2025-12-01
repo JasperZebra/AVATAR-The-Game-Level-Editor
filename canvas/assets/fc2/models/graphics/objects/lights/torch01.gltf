@@ -1,0 +1,335 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        11
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Torch01",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "FCX_State01",
+      "children": [
+        2,
+        6
+      ]
+    },
+    {
+      "name": "Torch01_Basic",
+      "translation": [
+        0.0,
+        0.002010710071772337,
+        0.0
+      ],
+      "children": [
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "name": "FCX_Ph01",
+      "translation": [
+        -0.0008622099994681776,
+        -0.0020107401069253683,
+        0.6039261221885681
+      ]
+    },
+    {
+      "name": "COL_Torch01_Basic01"
+    },
+    {
+      "name": "Torch01_Basic_LOD0"
+    },
+    {
+      "name": "Torch01_Basic01",
+      "translation": [
+        0.0,
+        0.002010710071772337,
+        0.0
+      ],
+      "children": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "name": "FCX_Ph02",
+      "translation": [
+        -0.0008622099994681776,
+        -0.0020107401069253683,
+        0.6039261221885681
+      ]
+    },
+    {
+      "name": "COL_Torch01_Basic02"
+    },
+    {
+      "name": "Torch01_Basic01_LOD0"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        10
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 1
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 7,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 8,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "Torch01_587110454_0.fakemat",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "Torch01_587110454_1.fakemat",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [],
+  "images": [],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 10,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 446,
+      "type": "VEC3",
+      "min": [
+        -0.05322428047657013,
+        -0.04629657883197069,
+        -0.019196142442524433
+      ],
+      "max": [
+        0.04779198579490185,
+        0.04943998530507088,
+        0.7230445258319378
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 446,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 446,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 446,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 354,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 414,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5123,
+      "count": 354,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5123,
+      "count": 414,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 640
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 640,
+      "byteLength": 5352,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5992,
+      "byteLength": 3568,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9560,
+      "byteLength": 3568,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 13128,
+      "byteLength": 7136,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 20264,
+      "byteLength": 708,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 20972,
+      "byteLength": 828,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 21800,
+      "byteLength": 708,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 22508,
+      "byteLength": 828,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 23336,
+      "uri": "torch01.bin"
+    }
+  ]
+}

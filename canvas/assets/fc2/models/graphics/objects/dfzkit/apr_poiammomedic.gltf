@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "APR_POIAmmoMedic"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\JFCARRIER2-M-0406200868677994.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "poiiconammomedic_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,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"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 348,
+      "type": "VEC3",
+      "min": [
+        -0.39658803027123213,
+        -0.020783104933798313,
+        0.008880886249244213
+      ],
+      "max": [
+        0.4272591322660446,
+        0.04687643051147461,
+        0.739097261801362
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 348,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 348,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 348,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 792,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 4176,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4240,
+      "byteLength": 2784,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7024,
+      "byteLength": 2784,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9808,
+      "byteLength": 5568,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15376,
+      "byteLength": 1584,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 16960,
+      "uri": "apr_poiammomedic.bin"
+    }
+  ]
+}

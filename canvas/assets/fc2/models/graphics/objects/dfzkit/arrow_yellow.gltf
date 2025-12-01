@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Arrow_Yellow"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\SLABRECHE-M-2008062040619649.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "arrow01_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABVElEQVR4nOXa7W7DIAyF4Zej3HfClWfqpE0sytLmE8N5JP7XxiYGNQEzxoQ5YU6YE+aEOWFOmBPmhDlhTpgTAYzj+L1sE/CjRhJEME8nQQT0ZEuIYFJKv2uaJr8ELN1dCaIBd7aEaMgdSRDBlWfCa12dBNGgK1sila/Ctaax0muXt8zz30fsnLNfBZTOblpaVsC7HYimrIgj1SA6cqQaRGf2JkF0aM9XQjRuOSfsvUuIzr2rBGFgqyWEkbUkCDPLJAwYWRuUhIn/pkRhYGtEHmjc8nZY+uRuIDr16cVIdGjPrXCgI0euw8Oenor4InT2ZUh04MyzWIrwT9FyOttTAWffA5uugCuCb+IQXOv5q4JvIgF3Bd5cC+Qbgm8mAXcFH7IFrj7lm62A/EDwYRPwVPDhWuDJwMNVQK4QfJhRuCZhTpgT5oQ5YU6YE+aEOWFOtX9AbV9NN2iZAtN2SQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 213,
+      "type": "VEC3",
+      "min": [
+        -0.23957029916346073,
+        -0.02465895563364029,
+        0.019257179461419582
+      ],
+      "max": [
+        0.2090823082253337,
+        0.014099551364779472,
+        0.4227423928678036
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 213,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 213,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 213,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 411,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 2556,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2620,
+      "byteLength": 1704,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4324,
+      "byteLength": 1704,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6028,
+      "byteLength": 3408,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9436,
+      "byteLength": 822,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 10258,
+      "uri": "arrow_yellow.bin"
+    }
+  ]
+}

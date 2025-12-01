@@ -1,0 +1,329 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        9
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "CautionSign01",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "FCX_Parts01",
+      "translation": [
+        -0.09168823063373566,
+        0.0,
+        0.0
+      ],
+      "children": [
+        2,
+        5
+      ]
+    },
+    {
+      "name": "SignPillar01",
+      "translation": [
+        0.09168823063373566,
+        0.0,
+        0.0
+      ],
+      "children": [
+        3,
+        4
+      ]
+    },
+    {
+      "name": "COL_SignPillar01",
+      "translation": [
+        0.002826689975336194,
+        0.004111710004508495,
+        0.03134404867887497
+      ],
+      "rotation": [
+        0.0,
+        -0.008299494078475227,
+        0.0,
+        0.9999655586059157
+      ]
+    },
+    {
+      "name": "SignPillar01_LOD0"
+    },
+    {
+      "name": "CautionSign",
+      "translation": [
+        0.08092620968818665,
+        -0.00391509011387825,
+        1.0253232717514038
+      ],
+      "rotation": [
+        0.46718126637689383,
+        0.5034363876161441,
+        -0.4991621684093646,
+        0.5283281183348075
+      ],
+      "children": [
+        6,
+        7
+      ]
+    },
+    {
+      "name": "COL_CautionSign01",
+      "translation": [
+        0.00024684000527441796,
+        -0.0002818999928422272,
+        0.007657350040972247
+      ],
+      "rotation": [
+        6.547496919639963e-16,
+        -1.4675760606763782e-15,
+        1.1263559529517412e-14,
+        1.0
+      ]
+    },
+    {
+      "name": "CautionSign_LOD0",
+      "rotation": [
+        6.547496919639963e-16,
+        -1.4675760606763782e-15,
+        1.1263559529517412e-14,
+        1.0
+      ]
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        8
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-1909200757503126.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "red",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8z8DwnwEPYMInOXwUAAASWwIOH0pJXQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 8,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 360,
+      "type": "VEC3",
+      "min": [
+        -0.16473891399800777,
+        -0.2835169527679682,
+        -0.010193182155489922
+      ],
+      "max": [
+        0.1667531356215477,
+        0.2837611008435488,
+        1.3077181298285723
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 360,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 360,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 360,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 378,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5123,
+      "count": 480,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 512
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 512,
+      "byteLength": 4320,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4832,
+      "byteLength": 2880,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7712,
+      "byteLength": 2880,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 10592,
+      "byteLength": 5760,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 16352,
+      "byteLength": 756,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 17108,
+      "byteLength": 960,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 18068,
+      "uri": "cautionsign01.bin"
+    }
+  ]
+}

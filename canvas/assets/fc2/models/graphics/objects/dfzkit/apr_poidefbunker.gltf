@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "APR_POIDefBunker"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\JFCARRIER2-M-0406200868703151.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "poiicondefbunker_d",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,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"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 348,
+      "type": "VEC3",
+      "min": [
+        -0.39658803027123213,
+        -0.020783104933798313,
+        0.008880886249244213
+      ],
+      "max": [
+        0.4272591322660446,
+        0.04687643051147461,
+        0.739097261801362
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 348,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 348,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 348,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 792,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 4176,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4240,
+      "byteLength": 2784,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7024,
+      "byteLength": 2784,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 9808,
+      "byteLength": 5568,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 15376,
+      "byteLength": 1584,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 16960,
+      "uri": "apr_poidefbunker.bin"
+    }
+  ]
+}

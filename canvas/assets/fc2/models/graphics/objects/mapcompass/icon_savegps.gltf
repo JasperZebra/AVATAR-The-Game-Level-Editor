@@ -1,0 +1,197 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "XBG to GLTF Converter with Textures"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Icon_SaveGPS"
+    },
+    {
+      "name": "MeshNode_LOD0",
+      "mesh": 0,
+      "skin": 0
+    },
+    {
+      "name": "Correction_Root",
+      "rotation": [
+        -0.70710678,
+        0.0,
+        0.0,
+        0.70710678
+      ],
+      "children": [
+        0,
+        1
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mesh_LOD0",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 0,
+      "joints": [
+        0
+      ],
+      "name": "Armature",
+      "skeleton": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "GRAPHICS\\_MATERIALS\\MADESLONGCHAMPS-M-2908200831357162.xbm",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        }
+      },
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "save_icon",
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFoElEQVR4nO2abUwcRRjH/z3O5OibNDGmRhKhRvRIm3KVaNAmUBSpGBN7dFtyNERCorVpTF9CNCHGWvkmscbcWftBIRWu9OAOktrWNHJ9CdIATQVTII0Nx5cqNiZgLeFSoGtmuTnm1l3Y7c1xC91f8mRndmdnd555e+aZAUxMTExMTEweVVYs8vfyAWQCeEblH/oA/AGgB8uEDAAHAQQBiDrkHoBmAHsArMQSJB/ARZ2Fnk++B/D8UugCOQCOAShQepiZkQnHiw7Ys+1zN6fngkNDQwheCmJ8fFwt/3oAhwCoJkgmHyvVniPHIVZXV4t6OP/TefHAoQOifaNdqTVMANgHA/EcgF75jwqCIPp8PjFeGhsbRafTqaSIbwGsTXbhN0dqhHvBKZOTk5IQRSgooQtAWjILP8b+0OGDh7kVXK4AKoXbCuVK+DUZSngVwCT7IzxrfSFcu12izWqThGkJaxdrFlgN4GcAL9MbPp9PPUfye/Egy88Ci3QNtAYQ8AcQng7TRycA7MUicEKp5knfl+5ZZRKvDSDLj9Y8bQmy9LpnB6vO9GR+f49Gao/WQhCEBV/SkkaNlrYW1WdNzU0YvTOK4EViaEp8AcCbSDthmGqbTE1kUBKnREmE0kgLYKTmk5q4+3vHhQ7FlhFlSlSyGjVj0ZH2/chCRqKpqQlGwXeKGYOASj1ms0XHdz6iAafTCSMh7BQglAqK/8pLASVGrX1WCbJWsJKnAipooKqyCjabLSrzkfpYKuLGquG5FRDKBNg3MossYDdPBbxGA7m5uTAqxW8Us9G3eSngdQBPkMD6p9Zj775FsTV4KGAHLwVk0sCW3C0wMtuLtyMtLU2+XolbAa/QQK7DuM2fkp6ezkYdPBSQQQP5BcTTZWzKXGVslHW+xm0HLEssWN5EWy8XBaTymNcTjM0aY5ukPeotoI/3clgXzaebMTgwiHi4PXobicSqIU10bU3W3Xlb8zRnfmPgBm7dvIV4YDw+muj/rZ+N/sNDAUMA3iGBUCgE3gWQryf0FpjdWCF0dnay0W4eY8AVGmA8L4YlNBJTSb/zaAFX2Mz7+/qxOWdBC/N/+AN+1NXVIf3p9BhXmcUyVweBQABenxclb5bA/bUb+z/cj3Nnzmn+BtlWYyDu8r/BCa+q738elxgr/oBf3a1F3d0ul+T4dH/jFodDw9JVLT/594nkbc1j03yupWAWjQrooAHPcc9sv6OiEdkiRZHsF7Jhgw1dl7ukjVRy1cPVzqts9DueCmgGcIdG/G1+GI1dZbvY6CUAIzwVMAHgFI3sqSDnFoxDS2sLWvwx7vMjWt+16PhODdsKyivKYSQFyGr/stZ3rTq+Q1rB8XA4/CmJeE95USqUwrlj1kPsa/VhQ+YG+TQUxeP2SN7kGXEmeq/hhwZM3Z+KxruvdUt2wMT9CekZuaoxfm/WPvMc88hr/zMkmB52ND7749mYkVxlL5+7jP07JtafrJffJ9t2Cd8c3QTgFwBrSISM1sMhsmE0SzgcRnm5evdgWwDhwcyDmLglJbZXpqxIUXy/4WQD1q1Zxz4iUwZpjn8txhmhnaTrUQUQ3G43St4qkRQwH3JTV55ebhrLlrfS++1t7aisIK7/KHcBZOktfLy8q2TssIaJJJwPSNR9WcdaIdORQxr6TdNEKcFV7kqYAiLji1wBSSs82x3uUgXYVtskaW1p5aYA2fkgWvCbxHiEQdhEZweqACq1R2vFwYFB3QXv7ekVqyqrlGYAUniyQiKDw/x7c0k4KHkEwAcAnpQ/IINl4bZCZNmzUFRUpDgIBjuC6OruwvVr1zH656hS/qHIQcl2GJhVAL6KjMi85v3hyPmEJcUqspkcMUsfptDE1Dsd2Zpf8sflHyd7lwCeBfAS464uiBSUem9HIsflL+ix501MTExMTExM8BD8B3id5IRg9W+kAAAAAElFTkSuQmCC"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1,
+      "type": "MAT4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3",
+      "min": [
+        -0.006042664870619774,
+        -0.005767998285591602,
+        -3.0518509447574615e-05
+      ],
+      "max": [
+        0.005920590832829475,
+        0.0056764427572488785,
+        -3.0518509447574615e-05
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 4,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 6,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 64
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 64,
+      "byteLength": 48,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 112,
+      "byteLength": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 144,
+      "byteLength": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 176,
+      "byteLength": 64,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 240,
+      "byteLength": 12,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 252,
+      "uri": "icon_savegps.bin"
+    }
+  ]
+}
