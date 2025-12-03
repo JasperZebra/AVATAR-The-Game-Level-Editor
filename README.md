@@ -18,11 +18,35 @@ A comprehensive level editor for modifying **Avatar: The Game** level files with
 
 ## Quick Start
 
+### Game Selection
+1. Select you game you want to start modding
+
+| **New Game selection** |
+|---|
+| <img width="600" height="500" alt="Screenshot 2025-12-01 161755" src="https://github.com/user-attachments/assets/b5a75f8d-18e9-4a16-b099-4fd6be77b5c2" /> |
+
 ### Loading a Level
-1. Click **"Select Level"** and follow the two-step process:
-   - **Step 1**: Select your `worlds` folder (contains XML files like mapsdata.xml)
-   - **Step 2**: Select your `levels` folder (contains worldsectors)
-2. Files are automatically loaded and converted as needed
+1. Set your `ptach` folder for the game type you're currently modding
+2. Level folders and files will be automatically read, loaded and converted as needed.
+3. Select the level you want to load into the editor from the UI screen
+
+| **AVATAR** | **FARCRY 2** |
+|---|---|
+| <img width="1329" height="1096" alt="Screenshot 2025-12-01 161837" src="https://github.com/user-attachments/assets/0cd89cef-c05c-4341-ad62-7aef36d47eb4" /> | <img width="1600" height="1300" alt="Screenshot 2025-12-01 161923" src="https://github.com/user-attachments/assets/8c837629-b9b9-4c09-a856-eefbde5e8a31" /> |
+
+## View Modes
+
+### 2D Mode:
+| **AVATAR** | **FARCRY 2** | 
+|---|---|
+| <img width="1808" height="1133" alt="Screenshot 2025-12-01 163403" src="https://github.com/user-attachments/assets/e69512a0-83c8-48e5-a2ec-b46e2506c165" /> | <img width="1807" height="1131" alt="Screenshot 2025-12-01 163745" src="https://github.com/user-attachments/assets/d2aa097d-7065-4440-8263-589983715e4d" /> |
+
+### 3D Mode:
+| **AVATAR** | **FARCRY 2** | 
+|---|---|
+| <img width="1801" height="1134" alt="Screenshot 2025-12-01 163508" src="https://github.com/user-attachments/assets/49fc5790-9758-4286-969c-474379842edb" /> | <img width="1803" height="1131" alt="Screenshot 2025-12-01 164020" src="https://github.com/user-attachments/assets/e310a42d-be1f-4485-9eef-4474f5669040" /> | 
+
+
 
 ### Basic Controls
 - **Select**: Left-click (Ctrl+click for multi-select)
