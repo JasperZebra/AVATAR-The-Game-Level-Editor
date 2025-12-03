@@ -4,10 +4,6 @@ import sys
 import glob
 import multiprocessing
 
-# Ensure freeze_support is called during build
-if __name__ == '__main__':
-    multiprocessing.freeze_support()
-
 # Define the base directory
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -177,14 +173,16 @@ executables = [
     )
 ]
 
-# Setup
+# Setup - MUST be inside if __name__ == '__main__' for multiprocessing
 if __name__ == '__main__':
+    # CRITICAL: Must be first for multiprocessing support in frozen exe
+    multiprocessing.freeze_support()
+    
     setup(
         name='Avatar Level Editor',
-        version='1.1',
+        version='1.8',
         description='Level Editor for Avatar: The Game - Edit maps, entities, and worldsectors',
         author='Jasper_Zebra',
         options={'build_exe': build_options},
         executables=executables
     )
-    # Run this command to build: python setup.py build

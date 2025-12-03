@@ -1,51 +1,60 @@
-# PyQt6 UI Components
-from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QApplication, QFileDialog, 
-    QVBoxLayout, QHBoxLayout, 
-    QPushButton, QLabel, QGroupBox, QDockWidget,
-    QStatusBar, QMessageBox, QToolBar, QComboBox, 
-    QProgressDialog, QProgressBar, QDialog,
-    QTreeWidget, QTreeWidgetItem, 
-    QLineEdit, QInputDialog, QListWidgetItem,
-    QTextEdit
-)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QPropertyAnimation
-from PyQt6.QtGui import (
-    QAction, QColor, QVector3D, QShortcut, 
-    QActionGroup, QFont, QPixmap, QPainter, QTransform
-)
+import multiprocessing
 
-# Application modules
-from data_models import (
-    Entity, GridConfig, MapInfo, ObjectEntity, 
-    WorldSectorManager, ObjectParser, ObjectLoadResult
-)
+# Prevent PyQt/OpenGL imports inside worker processes
+if multiprocessing.current_process().name != "MainProcess":
+    # Worker processes must NOT import PyQt/OpenGL/editor
+    # So define a dummy placeholder class and exit early
+    class SimplifiedMapEditor:
+        pass
+    # Do not import anything else
+else:
+    # Safe to import GUI + OpenGL:
+    from PyQt6.QtWidgets import (
+        QMainWindow, QWidget, QApplication, QFileDialog, 
+        QVBoxLayout, QHBoxLayout,
+        QPushButton, QLabel, QGroupBox, QDockWidget,
+        QStatusBar, QMessageBox, QToolBar, QComboBox,
+        QProgressDialog, QProgressBar, QDialog,
+        QTreeWidget, QTreeWidgetItem,
+        QLineEdit, QInputDialog, QListWidgetItem,
+        QTextEdit
+    )
+    from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QPropertyAnimation
+    from PyQt6.QtGui import (
+        QAction, QColor, QVector3D, QShortcut,
+        QActionGroup, QFont, QPixmap, QPainter, QTransform
+    )
 
-from entity_export_import import (
-    show_entity_export_dialog, 
-    show_entity_import_dialog,
-    setup_entity_export_import_system
-)
+    from data_models import (
+        Entity, GridConfig, MapInfo, ObjectEntity,
+        WorldSectorManager, ObjectParser, ObjectLoadResult
+    )
 
-from set_patch_folder import LevelSelectorDialog, integrate_patch_manager
-from cache_manager import get_cache_manager, shutdown_cache_manager
-from canvas.terrain_renderer import TerrainRenderer
-from canvas.map_canvas_gpu import MapCanvas
-from file_converter import FileConverter
-from all_in_one_copy_paste import setup_complete_smart_system
-from entity_export_import import setup_entity_export_import_system
+    from entity_export_import import (
+        show_entity_export_dialog, 
+        show_entity_import_dialog,
+        setup_entity_export_import_system
+    )
 
-# Standard library
-import time
-import glob
-import math
-import sys
-import os
-import xml.etree.ElementTree as ET
-import shutil
-import subprocess
-import platform
-from pathlib import Path
+    from set_patch_folder import LevelSelectorDialog, integrate_patch_manager
+    from cache_manager import get_cache_manager, shutdown_cache_manager
+    from canvas.terrain_renderer import TerrainRenderer
+    from canvas.map_canvas_gpu import MapCanvas
+    from file_converter import FileConverter
+    from all_in_one_copy_paste import setup_complete_smart_system
+    from entity_export_import import setup_entity_export_import_system
+
+    # Standard library
+    import time
+    import glob
+    import math
+    import sys
+    import os
+    import xml.etree.ElementTree as ET
+    import shutil
+    import subprocess
+    import platform
+    from pathlib import Path
 
 class SimplifiedMapEditor(QMainWindow):
     """Simplified main application window for XML Entity Coordinate Editor"""
@@ -277,7 +286,7 @@ class SimplifiedMapEditor(QMainWindow):
             log(f"⚠ Could not setup sector boundaries: {e}")
 
         # Window title
-        self.setWindowTitle(f"{window_title_prefix} Level Editor | Version 1.8 | Made By: Jasper Zebra")
+        self.setWindowTitle(f"{window_title_prefix} Level Editor | Version 1.9 | Made By: Jasper Zebra")
 
         # Connect entity selection
         startup_dialog.set_status("Connecting signals...")
@@ -2112,6 +2121,123 @@ class SimplifiedMapEditor(QMainWindow):
             import traceback
             traceback.print_exc()
 
+    def reset_editor_state_no_game_change(self):
+        """
+        Partial reset when switching levels within the same game mode.
+        Does NOT trigger game selector - only clears level-specific data.
+        """
+        print("PARTIAL EDITOR RESET - Clearing level data only (keeping game mode)")
+        
+        try:
+            # Clear entity data
+            self.entities = []
+            self.objects = []
+            self.selected_entity = None
+            
+            if hasattr(self, 'canvas'):
+                self.canvas.entities = []
+                self.canvas.selected = []
+                self.canvas.selected_entity = None
+                self.canvas.selected_positions = []
+                self.canvas.selected_rotations = []
+                if hasattr(self.canvas, 'invalidate_entity_cache'):
+                    self.canvas.invalidate_entity_cache()
+            
+            # Clear XML data
+            self.xml_tree = None
+            self.xml_file_path = None
+            self.omnis_tree = None
+            self.managers_tree = None
+            self.sectordep_tree = None
+            
+            if hasattr(self, 'worldsectors_trees'):
+                self.worldsectors_trees.clear()
+            else:
+                self.worldsectors_trees = {}
+            
+            if hasattr(self, 'worldsectors_modified'):
+                self.worldsectors_modified.clear()
+            else:
+                self.worldsectors_modified = {}
+            
+            self.worldsectors_path = None
+            
+            # Reset map config (keep game-specific grid)
+            self.current_map = None
+            if self.grid_config:
+                self.grid_config.maps = []
+            
+            if hasattr(self.canvas, 'current_map'):
+                self.canvas.current_map = None
+            if hasattr(self.canvas, 'grid_config'):
+                self.canvas.grid_config = self.grid_config
+            
+            # Reset UI
+            if hasattr(self, 'map_combo'):
+                self.map_combo.clear()
+                self.map_combo.addItem("No maps loaded")
+            
+            # Clear terrain
+            if hasattr(self.canvas, 'terrain_renderer'):
+                try:
+                    from canvas.terrain_renderer import TerrainRenderer
+                    self.canvas.terrain_renderer = TerrainRenderer()
+                except:
+                    pass
+            
+            self.sdat_path = None
+            
+            if hasattr(self, 'terrain_viewer') and self.terrain_viewer:
+                try:
+                    self.terrain_viewer.close()
+                    self.terrain_viewer = None
+                except:
+                    pass
+            
+            # Clear sector data
+            if hasattr(self.canvas, 'sector_data'):
+                self.canvas.sector_data = []
+            
+            # Reset flags
+            self.entities_modified = False
+            self.xml_tree_modified = False
+            self.omnis_tree_modified = False
+            self.managers_tree_modified = False
+            self.sectordep_tree_modified = False
+            self.objects_modified = False
+            
+            # Clear UI
+            if hasattr(self, 'entity_tree'):
+                self.entity_tree.clear()
+            
+            if hasattr(self, 'level_info_label'):
+                self.level_info_label.setText("No level loaded")
+            elif hasattr(self, 'xml_file_label'):
+                self.xml_file_label.setText("No level loaded")
+            
+            if hasattr(self, 'entity_editor') and self.entity_editor:
+                try:
+                    self.entity_editor.close()
+                    self.entity_editor = None
+                except:
+                    pass
+            
+            # Reset view
+            if hasattr(self.canvas, 'reset_view'):
+                self.canvas.reset_view()
+            
+            self.status_bar.showMessage(f"Ready to load new level ({self.game_mode})")
+            
+            if hasattr(self, 'canvas'):
+                self.canvas.update()
+            
+            print(f"PARTIAL RESET COMPLETE - Game mode '{self.game_mode}' preserved")
+            
+        except Exception as e:
+            print(f"Error during partial reset: {e}")
+            import traceback
+            traceback.print_exc()
+
     def select_level(self):
             """
             Visual level selection using patch folder - ENHANCED VERSION
@@ -2294,7 +2420,7 @@ class SimplifiedMapEditor(QMainWindow):
             
             # Connect cancel signal
             progress_dialog.cancelled.connect(
-                lambda: self.cancel_level_loading(progress_dialog)
+                lambda: self.cancel_loading(progress_dialog)
             )
             
             progress_dialog.show()

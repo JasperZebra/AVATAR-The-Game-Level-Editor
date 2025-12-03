@@ -1477,168 +1477,203 @@ def integrate_patch_manager(main_window):
             file_menu.addAction(action)
             file_menu.addSeparator()
 
-    # Store original select_level method
-    original_select_level = main_window.select_level
-
     # -------------------------------------------------------------------------
-    # NEW FIXED select_level METHOD
+    # NEW FIXED select_level METHOD - REPLACES ORIGINAL
     # -------------------------------------------------------------------------
-    def new_select_level():
-        print("\n=== STARTING LEVEL SELECTION (ENHANCED) ===")
-
-        # Full reset
-        main_window.reset_entire_editor_state()
-
-        if not patch_manager.is_configured():
-            print("[DEBUG] Patch folder not configured, prompting user...")
-            reply = QMessageBox.question(
-                main_window,
-                "Patch Folder Not Set",
-                "No patch folder is configured. Would you like to set one now?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            if reply == QMessageBox.StandardButton.Yes:
-                if not patch_manager.set_patch_folder():
-                    print("[DEBUG] User cancelled folder selection")
-                    return
-                else:
-                    # Update worlds_folder after setting patch folder
-                    update_worlds_folder(patch_manager, main_window)
-            else:
-                print("[DEBUG] User declined to set patch folder")
-                return
-
-        # Scan patch folder if levels_data is empty
-        if not patch_manager.levels_data:
-            print("[DEBUG] No levels_data, scanning patch folder...")
-            
-            # Import EnhancedProgressDialog
-            from simplified_map_editor import EnhancedProgressDialog
-            
-            # Create enhanced progress dialog
-            progress_dialog = EnhancedProgressDialog(
-                "Scanning Patch Folder", 
-                main_window, 
-                game_mode=main_window.game_mode
-            )
-            progress_dialog.append_log(f"Scanning: {os.path.basename(patch_manager.patch_folder)}")
-            progress_dialog.show()
-            QApplication.processEvents()
-
-            # Get file_converter from main_window
-            file_converter = main_window.file_converter if hasattr(main_window, 'file_converter') else None
-            
-            scanner_thread = PatchFolderScanner(patch_manager.patch_folder, file_converter)
-            patch_manager.scanner_thread = scanner_thread
-
-            scan_completed = [False]
-            
-            def on_complete(levels_data):
-                patch_manager.levels_data = levels_data or {}
-                progress_dialog.set_progress(100)
-                progress_dialog.append_log(f"✓ Scan complete: {len(patch_manager.levels_data)} levels found")
-                progress_dialog.mark_complete()
-                progress_dialog.stop_icon()
-                progress_dialog.close()
-                scan_completed[0] = True
-                print(f"[DEBUG] Scan complete: Found {len(patch_manager.levels_data)} levels")
-
-            def on_error(msg):
-                patch_manager.levels_data = {}
-                progress_dialog.append_log(f"✗ Error: {msg}")
-                progress_dialog.mark_complete()
-                progress_dialog.stop_icon()
-                progress_dialog.close()
-                scan_completed[0] = True
-                print(f"[DEBUG] Scan error: {msg}")
-                QMessageBox.critical(main_window, "Scan Error", msg)
-
-            def on_progress(percent, message):
-                if progress_dialog.was_cancelled:
-                    return
-                progress_dialog.set_progress(percent)
-                progress_dialog.set_status(message)
-                progress_dialog.append_log(message)
-                QApplication.processEvents()
-
-            scanner_thread.scan_complete.connect(on_complete)
-            scanner_thread.error_occurred.connect(on_error)
-            scanner_thread.progress_updated.connect(on_progress)
-            progress_dialog.cancelled.connect(scanner_thread.stop)
-            scanner_thread.start()
-
-            # Wait for scan to complete
-            while not scan_completed[0]:
-                QApplication.processEvents()
-            
-            print("[DEBUG] Scan finished.")
-
-        # Check again after scan
-        if not patch_manager.levels_data:
-            print("[DEBUG ERROR] No levels found after scan")
-            QMessageBox.warning(
-                main_window,
-                "No Levels Found",
-                "Patch scan returned 0 usable levels."
-            )
+    def new_select_level(self):
+        # PREVENT RE-ENTRY - Critical to avoid infinite loops
+        if hasattr(main_window, '_selecting_level') and main_window._selecting_level:
+            print("⚠️ Already selecting level, ignoring duplicate call")
             return
-
-        # Now show the level selector dialog with the scanned data
-        print("[DEBUG] Showing level selector dialog...")
-        print(f"[DEBUG] Creating dialog with {len(patch_manager.levels_data)} levels")
         
-        dialog = LevelSelectorDialog(
-            patch_manager.levels_data, 
-            main_window, 
-            main_window.game_mode, 
-            patch_manager
-        )
-        print(f"[DEBUG] Dialog created with patch_manager: {dialog.patch_manager is not None}")
+        main_window._selecting_level = True
         
-        def on_level_selected(lvl):
-            print(f"[DEBUG] Level selected signal received: {lvl}")
+        try:
+            print("\n=== STARTING LEVEL SELECTION (ENHANCED) ===")
 
-        def on_patch_folder_change():
-            print("[DEBUG] Patch folder change completed, clearing data and restarting")
-            update_worlds_folder(patch_manager, main_window)
-            patch_manager.levels_data = {}
-            dialog.close()
-            QTimer.singleShot(100, new_select_level)
-
-        dialog.level_selected.connect(on_level_selected)
-        dialog.patch_folder_change_requested.connect(on_patch_folder_change)
-
-        result = dialog.exec()
-        print(f"[DEBUG] Level selector exec result: {result}")
-        
-        if result == QDialog.DialogCode.Accepted and hasattr(dialog, 'selected_level') and dialog.selected_level:
-            level_dict = dialog.selected_level
-            print("[DEBUG] level_dict returned:")
-            for k, v in level_dict.items():
-                print(f"    {k} = {v}")
-
-            wp = level_dict.get("worlds_path")
-            lp = level_dict.get("levels_path")
-
-            # Validate paths - be more lenient
-            worlds_valid = main_window.validate_worlds_folder(wp) if wp else True
-            levels_valid = main_window.validate_levels_folder(lp) if lp else True
-
-            print(f"[DEBUG] Validation results: worlds_valid={worlds_valid}, levels_valid={levels_valid}")
-
-            # Only proceed if we have at least one valid path
-            if (wp and worlds_valid) or (lp and levels_valid):
-                print("[DEBUG] Calling load_complete_level() with selected level")
-                main_window.load_complete_level(level_dict)
+            # PARTIAL RESET - Don't trigger game selector
+            if hasattr(main_window, 'reset_editor_state_no_game_change'):
+                main_window.reset_editor_state_no_game_change()
             else:
-                print("[DEBUG ERROR] Neither worlds nor levels paths are valid")
+                # Fallback: manual partial reset
+                print("⚠️ Using fallback partial reset")
+                main_window.entities = []
+                main_window.objects = []
+                main_window.selected_entity = None
+                if hasattr(main_window, 'canvas'):
+                    main_window.canvas.entities = []
+                    main_window.canvas.selected = []
+                    main_window.canvas.selected_entity = None
+
+            if not patch_manager.is_configured():
+                print("[DEBUG] Patch folder not configured, prompting user...")
+                reply = QMessageBox.question(
+                    main_window,
+                    "Patch Folder Not Set",
+                    "No patch folder is configured. Would you like to set one now?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                if reply == QMessageBox.StandardButton.Yes:
+                    if not patch_manager.set_patch_folder():
+                        print("[DEBUG] User cancelled folder selection")
+                        return
+                    else:
+                        # Update worlds_folder after setting patch folder
+                        update_worlds_folder(patch_manager, main_window)
+                else:
+                    print("[DEBUG] User declined to set patch folder")
+                    return
+
+            # Scan patch folder if levels_data is empty
+            if not patch_manager.levels_data:
+                print("[DEBUG] No levels_data, scanning patch folder...")
+                
+                # Import EnhancedProgressDialog
+                from simplified_map_editor import EnhancedProgressDialog
+                
+                # Create enhanced progress dialog
+                progress_dialog = EnhancedProgressDialog(
+                    "Scanning Patch Folder", 
+                    main_window, 
+                    game_mode=main_window.game_mode
+                )
+                progress_dialog.append_log(f"Scanning: {os.path.basename(patch_manager.patch_folder)}")
+                progress_dialog.show()
+                QApplication.processEvents()
+
+                # Get file_converter from main_window
+                file_converter = main_window.file_converter if hasattr(main_window, 'file_converter') else None
+                
+                scanner_thread = PatchFolderScanner(patch_manager.patch_folder, file_converter)
+                patch_manager.scanner_thread = scanner_thread
+
+                scan_completed = [False]
+                
+                def on_complete(levels_data):
+                    patch_manager.levels_data = levels_data or {}
+                    progress_dialog.set_progress(100)
+                    progress_dialog.append_log(f"✓ Scan complete: {len(patch_manager.levels_data)} levels found")
+                    progress_dialog.mark_complete()
+                    progress_dialog.stop_icon()
+                    progress_dialog.close()
+                    scan_completed[0] = True
+                    print(f"[DEBUG] Scan complete: Found {len(patch_manager.levels_data)} levels")
+
+                def on_error(msg):
+                    patch_manager.levels_data = {}
+                    progress_dialog.append_log(f"✗ Error: {msg}")
+                    progress_dialog.mark_complete()
+                    progress_dialog.stop_icon()
+                    progress_dialog.close()
+                    scan_completed[0] = True
+                    print(f"[DEBUG] Scan error: {msg}")
+                    QMessageBox.critical(main_window, "Scan Error", msg)
+
+                def on_progress(percent, message):
+                    if progress_dialog.was_cancelled:
+                        return
+                    progress_dialog.set_progress(percent)
+                    progress_dialog.set_status(message)
+                    progress_dialog.append_log(message)
+                    QApplication.processEvents()
+
+                scanner_thread.scan_complete.connect(on_complete)
+                scanner_thread.error_occurred.connect(on_error)
+                scanner_thread.progress_updated.connect(on_progress)
+                progress_dialog.cancelled.connect(scanner_thread.stop)
+                scanner_thread.start()
+
+                # Wait for scan to complete
+                while not scan_completed[0]:
+                    QApplication.processEvents()
+                
+                print("[DEBUG] Scan finished.")
+
+            # Check again after scan
+            if not patch_manager.levels_data:
+                print("[DEBUG ERROR] No levels found after scan")
                 QMessageBox.warning(
                     main_window,
-                    "Invalid Level",
-                    "The selected level has no valid world or level data."
+                    "No Levels Found",
+                    "Patch scan returned 0 usable levels."
                 )
-        else:
-            print("[DEBUG] User cancelled level selection")
+                return
+
+            # Now show the level selector dialog with the scanned data
+            print("[DEBUG] Showing level selector dialog...")
+            print(f"[DEBUG] Creating dialog with {len(patch_manager.levels_data)} levels")
+            
+            dialog = LevelSelectorDialog(
+                patch_manager.levels_data, 
+                main_window, 
+                main_window.game_mode, 
+                patch_manager
+            )
+            print(f"[DEBUG] Dialog created with patch_manager: {dialog.patch_manager is not None}")
+            
+            def on_level_selected(lvl):
+                print(f"[DEBUG] Level selected signal received: {lvl}")
+
+            def on_patch_folder_change():
+                print("[DEBUG] Patch folder change completed, clearing data and restarting")
+                update_worlds_folder(patch_manager, main_window)
+                patch_manager.levels_data = {}
+                dialog.close()
+                QTimer.singleShot(100, new_select_level)
+
+            dialog.level_selected.connect(on_level_selected)
+            dialog.patch_folder_change_requested.connect(on_patch_folder_change)
+
+            result = dialog.exec()
+            print(f"[DEBUG] Level selector exec result: {result}")
+            
+            if result == QDialog.DialogCode.Accepted and hasattr(dialog, 'selected_level') and dialog.selected_level:
+                level_dict = dialog.selected_level
+                print("[DEBUG] level_dict returned:")
+                for k, v in level_dict.items():
+                    print(f"    {k} = {v}")
+
+                wp = level_dict.get("worlds_path")
+                lp = level_dict.get("levels_path")
+
+                # Validate paths - be more lenient
+                worlds_valid = main_window.validate_worlds_folder(wp) if wp else True
+                levels_valid = main_window.validate_levels_folder(lp) if lp else True
+
+                print(f"[DEBUG] Validation results: worlds_valid={worlds_valid}, levels_valid={levels_valid}")
+
+                # Only proceed if we have at least one valid path
+                if (wp and worlds_valid) or (lp and levels_valid):
+                    print("[DEBUG] Calling load_complete_level() with selected level")
+                    main_window.load_complete_level(level_dict)
+                else:
+                    print("[DEBUG ERROR] Neither worlds nor levels paths are valid")
+                    QMessageBox.warning(
+                        main_window,
+                        "Invalid Level",
+                        "The selected level has no valid world or level data."
+                    )
+            else:
+                print("[DEBUG] User cancelled level selection")
+        
+        finally:
+            # Always release the lock
+            main_window._selecting_level = False
+
+    # REPLACE the original select_level method (don't layer on top!)
+    import types
+    main_window.select_level = types.MethodType(new_select_level, main_window)
+    print("[DEBUG] ✓ Patched select_level method (replaced original)")
+    
+    # Also update the action if it exists
+    if hasattr(main_window, 'select_level_action'):
+        # Reconnect action to use new method
+        try:
+            main_window.select_level_action.triggered.disconnect()
+        except:
+            pass
+        main_window.select_level_action.triggered.connect(main_window.select_level)
+        print("[DEBUG] ✓ Reconnected select_level_action")
 
 def update_worlds_folder(patch_manager, main_window):
     """Helper function to update worlds_folder when patch folder changes"""
@@ -1660,7 +1695,6 @@ def update_worlds_folder(patch_manager, main_window):
         print("⚠️  Patch folder not configured, worlds_folder cleared")
         main_window.worlds_folder = None
 
-
 def on_patch_folder_changed(patch_manager, main_window):
     """Handler for when user manually sets patch folder from menu"""
     if patch_manager.set_patch_folder():
@@ -1671,20 +1705,3 @@ def on_patch_folder_changed(patch_manager, main_window):
             f"Patch folder has been set to:\n{patch_manager.patch_folder}\n\n"
             f"Worlds folder: {main_window.worlds_folder if hasattr(main_window, 'worlds_folder') else 'Not found'}"
         )
-
-# For testing standalone
-if __name__ == "__main__":
-    import sys
-    from PyQt6.QtWidgets import QApplication
-    
-    app = QApplication(sys.argv)
-    
-    # Test the patch manager
-    manager = PatchFolderManager()
-    
-    if manager.set_patch_folder():
-        level_info = manager.show_level_selector()
-        if level_info:
-            print(f"Selected level: {level_info}")
-    
-    sys.exit(app.exec())
