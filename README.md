@@ -57,23 +57,69 @@ A comprehensive level editor for modifying **Avatar: The Game** level files with
 
 ## Keyboard Shortcuts
 
+### File Operations
 | Action | Shortcut | Description |
 |--------|----------|-------------|
-| **File Operations** |
-| Open Level | ``Ctrl+O`` | Two-step level loading |
-| Save Level | ``Ctrl+S`` | Save changes to FCB format |
-| **Editing** |
-| Entity Editor | ``Ctrl+E`` | Open property editor |
-| Copy | ``Ctrl+C`` | Copy selected entities |
-| Paste | ``Ctrl+V`` | Paste entities |
-| Duplicate | ``Ctrl+D`` | Duplicate with +20 X/Y offset |
-| Delete | ``Delete`` | Remove selected entities |
-| **View Controls** |
-| Reset View | ``R`` | Center and reset camera |
-| Toggle Entities | ``E`` | Show/hide entity visibility |
-| Toggle Grid | ``G`` | Show/hide grid lines |
-| Camera Movement | ``WASD`` | Move camera (Shift for speed boost) |
-| Zoom | ``Mouse Wheel`` | Cursor-centered zooming |
+| Open Level | `Ctrl` + `O` | Two-step level loading |
+| Save Level | `Ctrl` + `S` | Save changes to FCB format |
+
+### Entity Editing
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Entity Editor | `Ctrl` + `E` | Open property editor |
+| Copy | `Ctrl` + `C` | Copy selected entities |
+| Paste | `Ctrl` + `V` | Paste entities |
+| Duplicate | `Ctrl` + `D` | Duplicate with +20 X/Y offset |
+| Delete | `Delete` | Remove selected entities |
+
+
+### View Controls
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Toggle 2D/3D | `Tab` or `T` | Switch between view modes |
+| Reset View | `R` | Center and reset camera |
+| Toggle Entities | `` ` `` | Show/hide entity visibility |
+| Toggle Grid | `G` | Show/hide grid lines |
+
+### 2D Camera Controls
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Pan Up | `W` | Move camera up |
+| Pan Down | `S` | Move camera down |
+| Pan Left | `A` | Move camera left |
+| Pan Right | `D` | Move camera right |
+| Speed Boost | `Shift` + `W`/`A`/`S`/`D` | 2.5x camera speed |
+| Zoom | `Mouse Wheel` | Cursor-centered zooming |
+
+### 3D Camera Controls
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Move Forward | `W` | FPS-style forward movement |
+| Move Backward | `S` | FPS-style backward movement |
+| Strafe Left | `A` | FPS-style left movement |
+| Strafe Right | `D` | FPS-style right movement |
+| Move Up | `E` | Vertical upward movement |
+| Move Down | `Q` | Vertical downward movement |
+| Speed Boost | `Shift` + movement | 2.5x movement speed |
+| Look Around | `Right Mouse` + `Drag` | Rotate camera view |
+
+### 3D Entity Movement
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Move Left | `←` | Move entity left on X-axis |
+| Move Right | `→` | Move entity right on X-axis |
+| Height Up | `↑` | Move entity up on Z-axis |
+| Height Down | `↓` | Move entity down on Z-axis |
+| Forward | `.` or `>` | Move entity forward on Y-axis |
+| Backward | `,` or `<` | Move entity backward on Y-axis |
+| Fine Control | `Shift` + arrow/`,`/`.` | Precise movement (0.01 units) |
+
+### 3D Entity Rotation
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Rotate Left | `K` | Rotate entity CCW by 1° |
+| Rotate Right | `L` | Rotate entity CW by 1° |
+| Fine Rotation | `Shift` + `K`/`L` | Rotate by 0.1° increments |
 
 ## Entity Types & Visualization
 
