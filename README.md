@@ -32,19 +32,20 @@ A comprehensive level editor for modifying **Avatar: The Game** level files with
 
 | **AVATAR** | **FARCRY 2** |
 |---|---|
-| <img width="1329" height="1096" alt="Screenshot 2025-12-01 161837" src="https://github.com/user-attachments/assets/0cd89cef-c05c-4341-ad62-7aef36d47eb4" /> | <img width="1600" height="1300" alt="Screenshot 2025-12-01 161923" src="https://github.com/user-attachments/assets/8c837629-b9b9-4c09-a856-eefbde5e8a31" /> |
+| <img width="1302" height="880" alt="image" src="https://github.com/user-attachments/assets/8a3751c6-eb69-4ae3-80f7-d0c5dbad426e" /> | <img width="1302" height="887" alt="image" src="https://github.com/user-attachments/assets/0f75a0e7-616b-4d91-9b85-a9537d48ad34" />
+ |
 
 ## View Modes
 
 ### 2D Mode:
 | **AVATAR** | **FARCRY 2** | 
 |---|---|
-| <img width="1808" height="1133" alt="Screenshot 2025-12-01 163403" src="https://github.com/user-attachments/assets/e69512a0-83c8-48e5-a2ec-b46e2506c165" /> | <img width="1807" height="1131" alt="Screenshot 2025-12-01 163745" src="https://github.com/user-attachments/assets/d2aa097d-7065-4440-8263-589983715e4d" /> |
+| <img width="1601" height="933" alt="Screenshot 2026-03-05 105539" src="https://github.com/user-attachments/assets/a005d734-63de-40bd-a8d8-b070118dbbfc" /> | <img width="1607" height="934" alt="Screenshot 2026-03-05 110119" src="https://github.com/user-attachments/assets/4201043d-4460-4f96-8678-ed7d86ccf6d8" /> |
 
 ### 3D Mode:
 | **AVATAR** | **FARCRY 2** | 
 |---|---|
-| <img width="1801" height="1134" alt="Screenshot 2025-12-01 163508" src="https://github.com/user-attachments/assets/49fc5790-9758-4286-969c-474379842edb" /> | <img width="1803" height="1131" alt="Screenshot 2025-12-01 164020" src="https://github.com/user-attachments/assets/e310a42d-be1f-4485-9eef-4474f5669040" /> | 
+| <img width="1602" height="933" alt="image" src="https://github.com/user-attachments/assets/00b00805-bac3-4262-b0db-3a462f7c620a" /> | <img width="1603" height="928" alt="Screenshot 2026-03-05 110243" src="https://github.com/user-attachments/assets/71e6a2d9-de4e-4907-85a8-12bd5e757218" /> | 
 
 
 
